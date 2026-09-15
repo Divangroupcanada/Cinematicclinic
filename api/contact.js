@@ -1,7 +1,7 @@
-// Vercel serverless function: forwards site forms to hello@cinematicclinic.com via Resend.
+// Vercel serverless function: forwards site forms to balamchi@divangroup.ca via Resend.
 // Env vars (Vercel → Project → Settings → Environment Variables):
 //   RESEND_API_KEY  — required for sending
-//   CONTACT_TO      — optional, default hello@cinematicclinic.com
+//   CONTACT_TO      — optional, default balamchi@divangroup.ca
 //   CONTACT_FROM    — optional, default "Cinematic Clinic <cinematic@divangroup.ca>" (divangroup.ca is verified in Resend)
 // Without RESEND_API_KEY the function answers 503 {fallback:true} and the page opens a pre-filled email instead.
 
@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
   const key = process.env.RESEND_API_KEY;
   if (!key) return res.status(503).json({ fallback: true, error: 'Email not configured' });
 
-  const to = process.env.CONTACT_TO || 'hello@cinematicclinic.com';
+  const to = process.env.CONTACT_TO || 'balamchi@divangroup.ca';
   const from = process.env.CONTACT_FROM || 'Cinematic Clinic <cinematic@divangroup.ca>';
   const subject = (kind === 'academy' ? 'Academy waitlist' : 'Work with me') + ` — ${name}` + (clinic ? ` (${clinic})` : '') + ` [${lang}]`;
   const rows = [
