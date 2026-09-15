@@ -31,7 +31,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* type */
 h1, h2, h3 { margin: 0; font-weight: 500; line-height: 1.05; letter-spacing: -.025em; text-wrap: balance; color: var(--bone); }
-.lang-en h1, .lang-en h2, .lang-en .display, .lang-en .stat-n, .lang-en .num { font-variation-settings: "wdth" 112; }
+/* EN display type — condensed uppercase, film-title register. FA is untouched:
+   Persian has no case and Vazirmatn has no width axis. */
+.lang-en h1, .lang-en h2, .lang-en .display, .lang-en .stat-n, .lang-en .num { font-variation-settings: "wdth" 70; }
+.lang-en h1, .lang-en h2, .lang-en .display { text-transform: uppercase; letter-spacing: .012em; font-weight: 700; line-height: .92; }
+.lang-en h3 { font-variation-settings: "wdth" 86; letter-spacing: .004em; font-weight: 600; }
+.lang-en h1 { font-size: clamp(3rem, 7.2vw, 6.4rem); }
+.lang-en h2 { font-size: clamp(2.3rem, 5vw, 4.3rem); }
+.lang-en .stat-n { font-weight: 700; letter-spacing: .004em; }
+/* the hero sub-line is body copy, not a title — keep it as set */
+.lang-en .hero h1 { text-transform: none; letter-spacing: 0; font-weight: 400; line-height: 1.45; font-variation-settings: "wdth" 100; }
+.lang-en .hero .display { font-size: clamp(3.2rem, 9.4vw, 8.8rem); letter-spacing: .006em; line-height: .88; max-width: 15ch; }
 h1 { font-size: clamp(2.6rem, 6vw, 5.4rem); }
 h2 { font-size: clamp(2rem, 4.2vw, 3.6rem); }
 h3 { font-size: clamp(1.25rem, 1.8vw, 1.6rem); letter-spacing: -.01em; }
