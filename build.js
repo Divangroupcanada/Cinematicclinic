@@ -106,7 +106,7 @@ ${body}
     </div>
     <div>
       <div class="foot-h">${esc(c.footer.connect)}</div>
-      <a href="mailto:hello@cinematicclinic.com" dir="ltr">hello@cinematicclinic.com</a>
+      <a href="mailto:balamchi@divangroup.ca" dir="ltr">balamchi@divangroup.ca</a>
       <a href="https://ca.linkedin.com/in/shahab-balamchi-612a67197" rel="me noopener" target="_blank">LinkedIn</a>
       <a href="https://youtube.com/@divan-group" rel="noopener" target="_blank">YouTube</a>
       <a href="${url(other, page)}" lang="${other}">${esc(c.nav.lang)}</a>
@@ -141,7 +141,7 @@ function orgSchema(lang) {
     slogan: 'Film the beauty business.',
     founder: { '@id': SITE + '/#shahab' },
     parentOrganization: { '@type': 'Organization', '@id': 'https://www.divangroup.ca/#organization', name: 'Divan Group', url: 'https://www.divangroup.ca' },
-    email: 'hello@cinematicclinic.com',
+    email: 'balamchi@divangroup.ca',
     address: { '@type': 'PostalAddress', addressLocality: 'Toronto', addressRegion: 'ON', addressCountry: 'CA' },
     areaServed: [
       { '@type': 'Country', name: 'Canada' },
@@ -166,7 +166,7 @@ function personSchema(lang) {
     jobTitle: 'Clinic Filmmaker · Commercial Cinematographer',
     description: c.about.metaDesc,
     url: abs(lang, 'about'),
-    email: 'hello@cinematicclinic.com',
+    email: 'balamchi@divangroup.ca',
     worksFor: { '@id': SITE + '/#organization' },
     affiliation: { '@type': 'Organization', '@id': 'https://www.divangroup.ca/#organization', name: 'Divan Group' },
     knowsLanguage: ['en', 'fa'],
@@ -220,7 +220,7 @@ const film = (lang, v, cls) => {
 };
 const faqBlock = (lang, title, faq) => `<section class="section faq"><div class="wrap narrow reveal"><h2 style="margin-bottom:28px">${esc(title)}</h2>
 ${faq.map((f) => `<details><summary>${esc(f.q)}</summary><div class="faq-a">${paras(Array.isArray(f.a) ? f.a : [f.a])}</div></details>`).join('\n')}</div></section>`;
-const cta = (lang, c) => `<section class="closing rule"><div class="wrap reveal"><h2>${md(c.title)}</h2><p>${md(c.text)}</p><p class="cta-row"><a class="btn" href="${url(lang, 'contact')}">${esc(c.button)}</a><a class="link" href="mailto:hello@cinematicclinic.com" dir="ltr">hello@cinematicclinic.com</a></p></div></section>`;
+const cta = (lang, c) => `<section class="closing rule"><div class="wrap reveal"><h2>${md(c.title)}</h2><p>${md(c.text)}</p><p class="cta-row"><a class="btn" href="${url(lang, 'contact')}">${esc(c.button)}</a><a class="link" href="mailto:balamchi@divangroup.ca" dir="ltr">balamchi@divangroup.ca</a></p></div></section>`;
 const list = (items) => `<ul class="list">${items.map((i) => `<li>${md(i)}</li>`).join('')}</ul>`;
 const steps = (items) => `<ol class="steps">${items.map((s, i) => `<li class="reveal"><span class="num" dir="ltr">0${i + 1}</span><strong>${esc(s.t)}</strong><span class="d">${md(s.d)}</span></li>`).join('')}</ol>`;
 const cards = (lang, items) => `<div class="cards">${items.map((i, n) => `<a class="card reveal" data-delay="${n}" href="${url(lang, i.page)}"><span class="card-k">${esc(i.k)}</span><span class="card-t">${esc(i.t)}</span><span class="card-d">${esc(i.d)}</span><span class="card-more arrow">${esc(i.more)}</span></a>`).join('')}</div>`;
@@ -241,7 +241,7 @@ const form = (lang, c, kind) => {
   <div class="field"><label for="f-message">${esc(kind === 'academy' ? f.academyMessage : f.message)}</label><textarea id="f-message" name="message" rows="5"></textarea></div>
   <input type="hidden" name="kind" value="${kind}"><input type="hidden" name="lang" value="${lang}">
   <p class="form-row"><button class="btn" type="submit">${esc(kind === 'academy' ? f.submitAcademy : f.submit)}</button><span class="form-note">${esc(f.note)}</span></p>
-  <p class="form-status" role="status" aria-live="polite" data-ok="${esc(f.ok)}" data-err="${esc(f.err)}" data-fallback="${esc(f.fallback)}" data-to="hello@cinematicclinic.com"></p>
+  <p class="form-status" role="status" aria-live="polite" data-ok="${esc(f.ok)}" data-err="${esc(f.err)}" data-fallback="${esc(f.fallback)}" data-to="balamchi@divangroup.ca"></p>
 </form>`;
 };
 
@@ -416,7 +416,7 @@ R.contact = (lang) => {
 <section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(k.eyebrow)}</span><h1>${esc(k.h1)}</h1><p class="lead">${md(k.lead)}</p></div></section>
 <section class="section"><div class="wrap contact-grid">
   <div>${form(lang, c, 'contact')}</div>
-  <aside class="contact-aside"><h2>${esc(k.asideTitle)}</h2>${paras(k.aside)}<p><a class="link" href="mailto:hello@cinematicclinic.com" dir="ltr">hello@cinematicclinic.com</a></p><p class="foot-print" dir="ltr">Canada · United States · Spain · UAE</p><p><a class="link" href="${url(lang, 'consent')}">${esc(c.footer.consent)} →</a></p></aside>
+  <aside class="contact-aside"><h2>${esc(k.asideTitle)}</h2>${paras(k.aside)}<p><a class="link" href="mailto:balamchi@divangroup.ca" dir="ltr">balamchi@divangroup.ca</a></p><p class="foot-print" dir="ltr">Canada · United States · Spain · UAE</p><p><a class="link" href="${url(lang, 'consent')}">${esc(c.footer.consent)} →</a></p></aside>
 </div></section>`;
   return { title: k.title, desc: k.metaDesc, body, schema: [orgSchema(lang), breadcrumb(lang, 'contact', c.nav.contact)] };
 };
@@ -489,7 +489,7 @@ Cinematic Clinic is the film practice of Shahab Balamchi, a Toronto-based commer
 - Clients: dermatology, plastic surgery, medical aesthetics / med spas, cosmetic dentistry, wellness practices
 - Markets: Canada · United States · Spain · UAE
 - Languages: English, Persian (Farsi)
-- Contact: hello@cinematicclinic.com
+- Contact: balamchi@divangroup.ca
 
 ## Pages
 ${PAGES.filter((p) => p !== 'privacy').map((p) => `- [${strip(LANGS.en[p === 'home' ? 'home' : p === 'clinic-film' ? 'clinicFilm' : p === 'doctor-series' ? 'doctorSeries' : p === 'film-week' ? 'filmWeek' : p].h1)}](${abs('en', p)}): ${strip(LANGS.en[p === 'home' ? 'home' : p === 'clinic-film' ? 'clinicFilm' : p === 'doctor-series' ? 'doctorSeries' : p === 'film-week' ? 'filmWeek' : p].metaDesc)}`).join('\n')}
@@ -508,7 +508,7 @@ const sectionText = (key) => {
   if (o.faq) t += `## FAQ\n\n${o.faq.map((f) => `**${f.q}**\n${strip(Array.isArray(f.a) ? f.a.join(' ') : f.a)}`).join('\n\n')}\n\n`;
   return t;
 };
-write('llms-full.txt', `# Cinematic Clinic — full text (English)\n\nSource: ${SITE} · Contact: hello@cinematicclinic.com · A Divan Group production · Canada · United States · Spain · UAE\n\n` +
+write('llms-full.txt', `# Cinematic Clinic — full text (English)\n\nSource: ${SITE} · Contact: balamchi@divangroup.ca · A Divan Group production · Canada · United States · Spain · UAE\n\n` +
   `# ${strip(en.home.h1)}\n\n${strip(en.home.lead)}\n\n${strip(en.home.entity)}\n\n${en.home.why.map((w) => `## ${w.t}\n\n${strip(w.d)}`).join('\n\n')}\n\n## FAQ\n\n${en.home.faq.map((f) => `**${f.q}**\n${strip(Array.isArray(f.a) ? f.a.join(' ') : f.a)}`).join('\n\n')}\n\n` +
   ['clinicFilm', 'doctorSeries', 'filmWeek'].map(sectionText).join('') +
   `# ${strip(en.academy.h1)}\n\n${strip(en.academy.lead)}\n\n${en.academy.intro.map(strip).join('\n\n')}\n\n## Modules\n\n${en.academy.modules.map((m) => `${m.n}. ${m.t} — ${m.d} (${m.len})`).join('\n')}\n\n## FAQ\n\n${en.academy.faq.map((f) => `**${f.q}**\n${strip(Array.isArray(f.a) ? f.a.join(' ') : f.a)}`).join('\n\n')}\n\n` +

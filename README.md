@@ -56,7 +56,7 @@ Git route: push this folder to a GitHub repo, then import it in Vercel.
 - `RESEND_API_KEY` — required for the contact + waitlist forms to send email.
   Without it, the form falls back to opening the visitor's own mail app, pre-filled — so the
   site still works on day one, it just doesn't collect submissions server-side.
-- `CONTACT_TO` — optional, defaults to hello@cinematicclinic.com
+- `CONTACT_TO` — optional, defaults to balamchi@divangroup.ca
 - `CONTACT_FROM` — optional, defaults to "Cinematic Clinic <cinematic@divangroup.ca>"
   (divangroup.ca is already verified in Resend; switch to cinematicclinic.com once that domain is verified there too.)
 
@@ -72,7 +72,7 @@ After go-live, update `SITE` at the top of build.js if the canonical host ever c
 - `content/videos.json` — the 59 portfolio films (YouTube id + EN/FA title + category).
 - `static/site.css`, `static/site.js`, `static/favicon.svg` — copied into `dist/assets/` at build.
 - `build.js` — the generator: layout, JSON-LD schema, sitemap, robots.txt, llms.txt.
-- `api/contact.js` — Vercel serverless function; posts both forms to hello@cinematicclinic.com via Resend.
+- `api/contact.js` — Vercel serverless function; posts both forms to balamchi@divangroup.ca via Resend.
 
 ## Pages (each in EN at `/` and FA at `/fa/`)
 
