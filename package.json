@@ -1,0 +1,1 @@
+{"name":"cinematicclinic","version":"1.0.0","private":true,"description":"Cinematic Clinic — Shahab Balamchi, clinic filmmaker. Static bilingual site (EN/FA).","scripts":{"build":"node build.js","preview":"node build.js && npx --yes serve dist -l 3000","start":"node build.js && npx --yes serve dist -l 3000"},"engines":{"node":">=18"}}
