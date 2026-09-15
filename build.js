@@ -26,7 +26,7 @@ function write(rel, content) {
 function fonts(lang) {
   return lang === 'fa'
     ? 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=Archivo:wght@400;500;600&display=swap'
-    : 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&display=swap';
+    : 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&display=swap';
 }
 
 function layout(lang, page, { title, desc, body, schema, ogImage, noindex }) {
