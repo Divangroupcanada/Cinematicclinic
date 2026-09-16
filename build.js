@@ -10,6 +10,9 @@ const LANGS = { en: require('./content/en.json'), fa: require('./content/fa.json
 const PAGES = ['home', 'work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', 'consent', 'privacy', 'contact'];
 const YT_IMG = (id, q) => `https://i.ytimg.com/vi/${id}/${q || 'hqdefault'}.jpg`;
 const HERO_ID = '9SIWEmTUW6o';
+// The band is the horizontal counterpart — the hero film is vertical (9:16),
+// so using it there would pillarbox. Picked from videos.json orient === 'h'.
+const BAND_ID = 'BHjNmSUK-do';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
@@ -254,10 +257,10 @@ const R = {};
 function filmBand(lang, h) {
   const c = LANGS[lang];
   const hasReel = fs.existsSync(path.join(__dirname, 'static', 'reel.mp4'));
-  const poster = hasReel ? '/assets/reel-poster.jpg' : YT_IMG(HERO_ID, 'maxresdefault');
+  const poster = hasReel ? '/assets/reel-poster.jpg' : YT_IMG(BAND_ID, 'maxresdefault');
   const media = hasReel
     ? `<video autoplay muted loop playsinline preload="none" poster="${poster}" aria-hidden="true" tabindex="-1"><source src="/assets/reel.webm" type="video/webm"><source src="/assets/reel.mp4" type="video/mp4"></video>`
-    : `<img src="${poster}" onerror="this.onerror=null;this.src='${YT_IMG(HERO_ID)}'" alt="" width="1280" height="720" loading="lazy" aria-hidden="true">`;
+    : `<img src="${poster}" onerror="this.onerror=null;this.src='${YT_IMG(BAND_ID)}'" alt="" width="1280" height="720" loading="lazy" aria-hidden="true">`;
   return `
 <section class="band" aria-label="${esc(h.bandEyebrow)}">
   <div class="band-media">${media}</div>
@@ -265,18 +268,38 @@ function filmBand(lang, h) {
   <div class="wrap band-copy reveal">
     <span class="label ox">${esc(h.bandEyebrow)}</span>
     <h2>${md(h.bandTitle)}</h2>
-    <button class="play-btn" type="button" data-lightbox="${HERO_ID}"><span class="ring" aria-hidden="true"></span><span>${esc(h.bandWatch)}</span></button>
+    <button class="play-btn" type="button" data-lightbox="${BAND_ID}"><span class="ring" aria-hidden="true"></span><span>${esc(h.bandWatch)}</span></button>
   </div>
 </section>`;
+}
+
+function verticalFromCatalogue(lang, h) {
+  const c = LANGS[lang];
+  const picks = videos.filter((v) => v.orient === 'v').slice(0, 4);
+  if (!picks.length) return '';
+  const cards = picks.map((v, i) => {
+    const t = lang === 'fa' ? v.title_fa : v.title;
+    const k = lang === 'fa' ? v.cat_fa : v.cat;
+    return `<figure class="vcard reveal" data-delay="${i}">
+      <a class="film vframe" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cursor="${esc(c.ui.play)}" target="_blank" rel="noopener" aria-label="${esc(t)}"><img src="${YT_IMG(v.id, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'" alt="${esc(t)}" width="1280" height="720" loading="lazy"><span class="play" aria-hidden="true"></span></a>
+      <figcaption><span class="vcap-t">${esc(t)}</span><span class="vcap-k">${esc(k)}</span></figcaption>
+    </figure>`;
+  }).join('\n');
+  return `
+<section class="section"><div class="wrap">
+  <div class="section-head reveal"><div><span class="label ox">${esc(h.vertEyebrow)}</span><h2 style="margin-top:14px">${esc(h.vertTitle)}</h2></div><p class="lead" style="margin:0">${md(h.vertLead)}</p></div>
+  <div class="vstrip">${cards}</div>
+</div></section>`;
 }
 
 // 9:16 counterpart to the band. Renders only when there are real vertical files
 // in static/vertical/ — an empty strip would be worse than no strip.
 function verticalStrip(lang, h) {
+  const c = LANGS[lang];
   const dir = path.join(__dirname, 'static', 'vertical');
-  if (!fs.existsSync(dir)) return '';
+  if (!fs.existsSync(dir)) return verticalFromCatalogue(lang, h);
   const clips = fs.readdirSync(dir).filter((f) => f.endsWith('.mp4')).sort().slice(0, 6);
-  if (!clips.length) return '';
+  if (!clips.length) return verticalFromCatalogue(lang, h);
   const cards = clips.map((f, i) => {
     const stem = f.replace(/\.mp4$/, '');
     const webm = fs.existsSync(path.join(dir, stem + '.webm'));
