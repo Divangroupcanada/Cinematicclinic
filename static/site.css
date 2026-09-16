@@ -739,3 +739,34 @@ html.no-motion .feature .film { clip-path: none; }
   .link, .foot-credit a, .foot-brand a, .foot a[href^="mailto"] { display: inline-block; padding-block: 6px; }
   .foot-credit span { display: inline-block; }
 }
+
+/* ---------------------------------------------------------------------
+   FULL-BLEED FILM BAND + VERTICAL STRIP
+   The band is the horizontal counterpart to the hero; the strip is the 9:16
+   one. Both hold their aspect box before media loads so nothing reflows.
+   --------------------------------------------------------------------- */
+.band { position: relative; isolation: isolate; min-height: clamp(420px, 68vh, 760px); display: grid; align-items: end; overflow: hidden; margin: clamp(48px, 7vw, 104px) 0; }
+.band-media { position: absolute; inset: 0; z-index: -2; background: var(--ink-2); }
+.band-media img, .band-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.band-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11,11,13,.72) 0%, rgba(11,11,13,.28) 42%, rgba(11,11,13,.86) 100%); }
+.band-copy { padding-block: clamp(36px, 5vw, 72px); }
+.band-copy h2 { max-width: 18ch; margin: 14px 0 26px; }
+.lang-fa .band-copy h2 { max-width: 22ch; }
+.band-copy .play-btn { margin-top: 4px; }
+
+.vstrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(12px, 1.6vw, 24px); margin-top: clamp(28px, 4vw, 48px); }
+.vframe { display: block; position: relative; aspect-ratio: 9 / 16; overflow: hidden; border-radius: 4px; background: var(--ink-2); border: 1px solid var(--line); }
+.vframe video { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(var(--hz, 1)); transition: transform .8s var(--ease); }
+.vcard { margin: 0; }
+.vcard:hover { --hz: 1.04; }
+
+@media (max-width: 900px) {
+  .vstrip { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(58vw, 1fr); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); scrollbar-width: none; }
+  .vstrip::-webkit-scrollbar { display: none; }
+  .vcard { scroll-snap-align: start; }
+}
+@media (max-width: 560px) { .vstrip { grid-auto-columns: minmax(72vw, 1fr); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .vframe video { transition: none; transform: none; }
+}
