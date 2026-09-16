@@ -253,8 +253,10 @@ R.home = (lang) => {
   const hero = videos.find((v) => v.id === HERO_ID);
   const heroTitle = lang === 'fa' ? hero.title_fa : hero.title;
   const hasMp4 = fs.existsSync(path.join(__dirname, 'static', 'hero.mp4'));
+  // Plays once on load and fades to black; the poster IS that last black frame,
+  // so there is no flash before playback and no jump when it ends.
   const media = hasMp4
-    ? `<video autoplay muted loop playsinline preload="metadata" poster="${YT_IMG(HERO_ID, 'maxresdefault')}" src="/assets/hero.mp4" aria-hidden="true" tabindex="-1"></video>`
+    ? `<video autoplay muted playsinline preload="auto" poster="/assets/hero-poster.jpg" aria-hidden="true" tabindex="-1"><source src="/assets/hero.webm" type="video/webm"><source src="/assets/hero.mp4" type="video/mp4"></video>`
     : '';
   const mediaAttr = hasMp4 ? '' : ` data-yt="${HERO_ID}" data-title="${esc(heroTitle)}"`;
   const selected = h.selected.map((sel, i) => {
@@ -267,7 +269,7 @@ R.home = (lang) => {
   }).join('\n');
   const body = `
 <section class="hero">
-  <div class="hero-media"${mediaAttr} style="background-image:url('${YT_IMG(HERO_ID, 'maxresdefault')}')">${media}</div>
+  <div class="hero-media"${mediaAttr} style="background-image:url('${hasMp4 ? '/assets/hero-poster.jpg' : YT_IMG(HERO_ID, 'maxresdefault')}')">${media}</div>
   <div class="hero-shade"></div>
   <div class="hero-grain" aria-hidden="true"></div>
   <div class="wrap reveal in">
