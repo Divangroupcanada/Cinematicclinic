@@ -248,6 +248,52 @@ const form = (lang, c, kind) => {
 // ---------- pages ----------
 const R = {};
 
+// Full-bleed horizontal film. Uses a self-hosted loop when static/reel.(webm|mp4)
+// exists; until then it shows the brand film's frame and opens it in the lightbox.
+// Either way the band is real content, never an empty placeholder.
+function filmBand(lang, h) {
+  const c = LANGS[lang];
+  const hasReel = fs.existsSync(path.join(__dirname, 'static', 'reel.mp4'));
+  const poster = hasReel ? '/assets/reel-poster.jpg' : YT_IMG(HERO_ID, 'maxresdefault');
+  const media = hasReel
+    ? `<video autoplay muted loop playsinline preload="none" poster="${poster}" aria-hidden="true" tabindex="-1"><source src="/assets/reel.webm" type="video/webm"><source src="/assets/reel.mp4" type="video/mp4"></video>`
+    : `<img src="${poster}" onerror="this.onerror=null;this.src='${YT_IMG(HERO_ID)}'" alt="" width="1280" height="720" loading="lazy" aria-hidden="true">`;
+  return `
+<section class="band" aria-label="${esc(h.bandEyebrow)}">
+  <div class="band-media">${media}</div>
+  <div class="band-shade" aria-hidden="true"></div>
+  <div class="wrap band-copy reveal">
+    <span class="label ox">${esc(h.bandEyebrow)}</span>
+    <h2>${md(h.bandTitle)}</h2>
+    <button class="play-btn" type="button" data-lightbox="${HERO_ID}"><span class="ring" aria-hidden="true"></span><span>${esc(h.bandWatch)}</span></button>
+  </div>
+</section>`;
+}
+
+// 9:16 counterpart to the band. Renders only when there are real vertical files
+// in static/vertical/ — an empty strip would be worse than no strip.
+function verticalStrip(lang, h) {
+  const dir = path.join(__dirname, 'static', 'vertical');
+  if (!fs.existsSync(dir)) return '';
+  const clips = fs.readdirSync(dir).filter((f) => f.endsWith('.mp4')).sort().slice(0, 6);
+  if (!clips.length) return '';
+  const cards = clips.map((f, i) => {
+    const stem = f.replace(/\.mp4$/, '');
+    const webm = fs.existsSync(path.join(dir, stem + '.webm'));
+    const poster = fs.existsSync(path.join(dir, stem + '.jpg')) ? `/assets/vertical/${stem}.jpg` : '';
+    const sources = (webm ? `<source src="/assets/vertical/${stem}.webm" type="video/webm">` : '') +
+                    `<source src="/assets/vertical/${stem}.mp4" type="video/mp4">`;
+    return `<figure class="vcard reveal" data-delay="${i}">
+      <span class="vframe"><video muted loop playsinline preload="none"${poster ? ` poster="${poster}"` : ''} aria-hidden="true" tabindex="-1">${sources}</video></span>
+    </figure>`;
+  }).join('\n');
+  return `
+<section class="section"><div class="wrap">
+  <div class="section-head reveal"><div><span class="label ox">${esc(h.vertEyebrow)}</span><h2 style="margin-top:14px">${esc(h.vertTitle)}</h2></div><p class="lead" style="margin:0">${md(h.vertLead)}</p></div>
+  <div class="vstrip">${cards}</div>
+</div></section>`;
+}
+
 R.home = (lang) => {
   const c = LANGS[lang], h = c.home;
   const hero = videos.find((v) => v.id === HERO_ID);
@@ -285,6 +331,7 @@ R.home = (lang) => {
 <section class="led">
   ${h.led.map((b, i) => `<div class="reveal" data-delay="${i}"><span class="label ox">${esc(b.k)}</span><h2>${md(b.t)}</h2><p>${md(b.d)}</p><div class="tags">${b.tags.map((x) => `<span>${esc(x)}</span>`).join('')}</div></div>`).join('')}
 </section>
+${filmBand(lang, h)}
 <section class="section"><div class="wrap reveal">
   <p class="manifesto">${md(h.manifesto)}</p>
   <p class="entity" style="margin-top:36px">${md(h.entity)}</p>
@@ -302,6 +349,7 @@ R.home = (lang) => {
   <div class="section-head reveal"><h2>${esc(h.selectedTitle)}</h2><a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a></div>
   <div class="selected">${selected}</div>
 </div></section>
+${verticalStrip(lang, h)}
 <section class="section"><div class="wrap">
   <div class="section-head reveal"><h2>${esc(h.offersTitle)}</h2></div>
   ${cards(lang, h.offers)}
