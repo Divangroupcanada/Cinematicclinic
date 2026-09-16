@@ -290,6 +290,23 @@
   /* ---------------------------------------------------------------
      9. Hero background film — only where it earns its bytes.
      --------------------------------------------------------------- */
+  /* Local hero film: plays once, fades to black, then stays on its last frame.
+     Reduced motion and Save-Data never see it move — the poster is that same
+     black frame, so the hero looks identical either way. */
+  var hv = d.querySelector('.hero-media video');
+  if (hv) {
+    var hconn = navigator.connection || {};
+    if (reduce || hconn.saveData) {
+      hv.removeAttribute('autoplay');
+      hv.preload = 'none';
+      try { hv.pause(); } catch (e) {}
+    } else {
+      hv.addEventListener('ended', function () { hv.classList.add('is-done'); });
+      var play = hv.play();
+      if (play && play.catch) play.catch(function () { /* autoplay refused: poster stands in */ });
+    }
+  }
+
   var hm = d.querySelector('.hero-media[data-yt]');
   if (hm) {
     var conn = navigator.connection || {};
