@@ -213,12 +213,15 @@ function videoSchema(lang, v) {
 // ---------- components ----------
 // WebP with a JPEG fallback. Width/height are set so nothing reflows while loading.
 const photo = (base, alt, w, h, cls, eager) => `<span class="${cls || 'photo'}"><img src="/assets/${base}.jpg" alt="${esc(alt)}" width="${w}" height="${h}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"></span>`;
-const film = (lang, v, cls) => {
+const film = (lang, v, cls, big) => {
   const c0 = LANGS[lang];
   const t = lang === 'fa' ? v.title_fa : v.title;
   const cat = lang === 'fa' ? v.cat_fa : v.cat;
+  // A full-width frame needs the 1280px still; hqdefault is 480px and goes soft.
+  const src = big ? YT_IMG(v.id, 'maxresdefault') : YT_IMG(v.id);
+  const fallback = big ? ` onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'"` : '';
   return `<a class="film ${cls || ''}" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cat="${esc(v.cat)}" data-cursor="${esc(c0.ui.play)}" target="_blank" rel="noopener">
-  <span class="film-frame${v.orient === 'v' ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${YT_IMG(v.id)}" alt="${esc(t)}" loading="lazy" width="480" height="360" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
+  <span class="film-frame${v.orient === 'v' ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${src}"${fallback} alt="${esc(t)}" loading="lazy" width="${big ? 1280 : 480}" height="${big ? 720 : 360}" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
   <span class="film-meta"><span class="film-title">${esc(t)}</span><span class="film-cat">${esc(cat)}</span></span></a>`;
 };
 const faqBlock = (lang, title, faq) => `<section class="section faq"><div class="wrap narrow reveal"><h2 style="margin-bottom:28px">${esc(title)}</h2>
@@ -408,11 +411,11 @@ R.work = (lang) => {
   const tall = sorted.filter((v) => v.orient !== 'h');
   const body = `
 <section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(w.eyebrow)}</span><h1>${esc(w.h1)}</h1><p class="lead">${md(w.lead)}</p></div></section>
-<section class="section"><div class="wrap reveal">
-  <div class="filters" role="toolbar" aria-label="${esc(w.filterLabel)}"><button class="chip is-on" data-filter="all" aria-pressed="true">${esc(w.all)} <span dir="ltr">(${videos.length})</span></button>${catsOrder.map((cat) => `<button class="chip" data-filter="${esc(cat)}" aria-pressed="false">${esc(catLabel(cat))} <span dir="ltr">(${videos.filter((v) => v.cat === cat).length})</span></button>`).join('')}</div>
+<section class="section"><div class="wrap">
+  <div class="filters reveal" role="toolbar" aria-label="${esc(w.filterLabel)}"><button class="chip is-on" data-filter="all" aria-pressed="true">${esc(w.all)} <span dir="ltr">(${videos.length})</span></button>${catsOrder.map((cat) => `<button class="chip" data-filter="${esc(cat)}" aria-pressed="false">${esc(catLabel(cat))} <span dir="ltr">(${videos.filter((v) => v.cat === cat).length})</span></button>`).join('')}</div>
   <div class="section-head reveal" style="margin-top:clamp(40px,5vw,72px)"><div><span class="label ox">${esc(w.wideTitle)}</span><h2 style="margin-top:14px" dir="ltr">16:9</h2></div><p class="lead" style="margin:0">${md(w.wideLead)}</p></div>
-  <div class="reel-stack" id="films">${wide.map((v) => film(lang, v, 'reel-item')).join('')}</div>
-  <p class="note">${md(w.note)}</p>
+  <div class="reel-stack" id="films">${wide.map((v) => film(lang, v, 'reel-item reveal', true)).join('')}</div>
+  <p class="note reveal">${md(w.note)}</p>
 </div></section>
 <section class="section">
   <div class="wrap"><div class="section-head reveal"><div><span class="label ox">${esc(w.vertTitle)}</span><h2 style="margin-top:14px" dir="ltr">9:16</h2></div><p class="lead" style="margin:0">${md(w.vertLead)}</p></div></div>
