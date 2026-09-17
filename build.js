@@ -9,10 +9,18 @@ const videos = require('./content/videos.json');
 const LANGS = { en: require('./content/en.json'), fa: require('./content/fa.json') };
 const PAGES = ['home', 'work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', 'consent', 'privacy', 'contact'];
 const YT_IMG = (id, q) => `https://i.ytimg.com/vi/${id}/${q || 'hqdefault'}.jpg`;
-const HERO_ID = '9SIWEmTUW6o';
+const HERO_ID = 'OsLZLrxW6UQ';
 // The band is the horizontal counterpart — the hero film is vertical (9:16),
 // so using it there would pillarbox. Picked from videos.json orient === 'h'.
-const BAND_ID = 'BHjNmSUK-do';
+const BAND_ID = 'v2FsTXiBH4U';
+
+// Curation lives in one place: `star` on a videos.json entry is a rank, lower is
+// better, and a starred film leads wherever films are listed — the 9:16 strip on
+// the home page, and both halves of /work/. Films with no star keep catalogue
+// order behind the starred ones, which is exactly what shipped before this
+// existed, so an empty curation changes nothing.
+const STAR = (v) => (typeof v.star === 'number' ? v.star : 1e9);
+const byStar = (a, b) => STAR(a) - STAR(b);
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
@@ -217,12 +225,14 @@ const film = (lang, v, cls, big) => {
   const c0 = LANGS[lang];
   const t = lang === 'fa' ? v.title_fa : v.title;
   const cat = lang === 'fa' ? v.cat_fa : v.cat;
+  const rawVen = lang === 'fa' ? v.venue_fa : v.venue;
+  const ven = rawVen && !/^Divan Group|^دیوان گروپ/.test(rawVen) ? rawVen : '';
   // A full-width frame needs the 1280px still; hqdefault is 480px and goes soft.
   const src = big ? YT_IMG(v.id, 'maxresdefault') : YT_IMG(v.id);
   const fallback = big ? ` onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'"` : '';
   return `<a class="film ${cls || ''}" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cat="${esc(v.cat)}" data-cursor="${esc(c0.ui.play)}" target="_blank" rel="noopener">
   <span class="film-frame${v.orient === 'v' ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${src}"${fallback} alt="${esc(t)}" loading="lazy" width="${big ? 1280 : 480}" height="${big ? 720 : 360}" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
-  <span class="film-meta"><span class="film-title">${esc(t)}</span><span class="film-cat">${esc(cat)}</span></span></a>`;
+  <span class="film-meta"><span class="film-title">${esc(t)}</span><span class="film-cat">${esc(ven ? `${cat} · ${ven}` : cat)}</span></span></a>`;
 };
 const faqBlock = (lang, title, faq) => `<section class="section faq"><div class="wrap narrow reveal"><h2 style="margin-bottom:28px">${esc(title)}</h2>
 ${faq.map((f) => `<details><summary>${esc(f.q)}</summary><div class="faq-a">${paras(Array.isArray(f.a) ? f.a : [f.a])}</div></details>`).join('\n')}</div></section>`;
@@ -278,7 +288,7 @@ function filmBand(lang, h) {
 
 function verticalFromCatalogue(lang, h) {
   const c = LANGS[lang];
-  const picks = videos.filter((v) => v.orient === 'v').slice(0, 4);
+  const picks = videos.filter((v) => v.orient === 'v').sort(byStar).slice(0, 4);
   if (!picks.length) return '';
   const cards = picks.map((v, i) => {
     const t = lang === 'fa' ? v.title_fa : v.title;
@@ -402,9 +412,9 @@ ${cta(lang, h.cta)}`;
 
 R.work = (lang) => {
   const c = LANGS[lang], w = c.work;
-  const catsOrder = ['Brand Film', 'Clinic Tour', 'Practitioner', 'Injectables', 'Facial', 'Laser', 'Skincare', 'Head Spa', 'HIFU', 'Body Contouring', 'Microneedling', 'PRP', 'Dermatology', 'Brows', 'Behind the Scenes'];
+  const catsOrder = ['Brand Film', 'Practitioner', 'Injectables', 'Facial', 'Laser', 'Head Spa', 'Brows', 'Training', 'Behind the Scenes'];
   const catLabel = (cat) => (lang === 'fa' ? videos.find((v) => v.cat === cat).cat_fa : cat);
-  const sorted = [...videos].sort((a, b) => catsOrder.indexOf(a.cat) - catsOrder.indexOf(b.cat));
+  const sorted = [...videos].sort((a, b) => byStar(a, b) || catsOrder.indexOf(a.cat) - catsOrder.indexOf(b.cat));
   // Horizontal films run full width; everything portrait or square goes in the
   // carousel, where a fixed card height lets 9:16 and 1:1 sit together.
   const wide = sorted.filter((v) => v.orient === 'h');
