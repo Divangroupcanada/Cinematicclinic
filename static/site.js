@@ -137,7 +137,9 @@
           io.unobserve(e.target);
           if (e.target.hasAttribute('data-count')) count(e.target);
         });
-      }, { rootMargin: '0px 0px -12% 0px', threshold: 0.05 })
+      }, // threshold 0 as well as 0.05: an element taller than the viewport can
+         // never expose 5% of itself, so a tall block would never reveal at all.
+         { rootMargin: '0px 0px -12% 0px', threshold: [0, 0.05] })
     : null;
 
   var watched = [].slice.call(d.querySelectorAll('.reveal, [data-split="1"], [data-count]'));
@@ -151,20 +153,21 @@
   // frames, so the observer never samples them. Sweep up anything left behind.
   if (io && pending.length) {
     var sweeping = false;
-    w.addEventListener('scroll', function () {
-      if (sweeping || !pending.length) return;
-      sweeping = true;
-      requestAnimationFrame(function () {
-        pending = pending.filter(function (el) {
-          if (el.classList.contains('in')) return false;
-          if (el.getBoundingClientRect().bottom >= 0) return true;
-          el.classList.add('in');
-          io.unobserve(el);
-          if (el.hasAttribute('data-count')) count(el);
-          return false;
-        });
-        sweeping = false;
+    function sweep() {
+      pending = pending.filter(function (el) {
+        if (el.classList.contains('in')) return false;
+        if (el.getBoundingClientRect().bottom >= 0) return true;
+        el.classList.add('in');
+        io.unobserve(el);
+        if (el.hasAttribute('data-count')) count(el);
+        return false;
       });
+    }
+    w.addEventListener('scroll', function () {
+      if (!pending.length) return;
+      if (sweeping) return;
+      sweeping = true;
+      requestAnimationFrame(function () { sweep(); sweeping = false; });
     }, { passive: true });
   }
   // Anything already on screen at load rises as part of the intro, not on scroll.
