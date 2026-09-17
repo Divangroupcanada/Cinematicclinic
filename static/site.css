@@ -778,3 +778,64 @@ a.vframe .play { position: absolute; inset: 0; margin: auto; }
 @media (prefers-reduced-motion: reduce) {
   .vframe video { transition: none; transform: none; }
 }
+
+/* ---------------------------------------------------------------------
+   TRUE ASPECT FOR FILM CARDS
+   27 of the 59 films are 9:16 and 8 are square. Forcing them into a 16:9
+   frame showed YouTube's blurred pillarbox bars, which read as a mistake.
+   videos.json now records `orient`, so each card takes its real shape.
+   --------------------------------------------------------------------- */
+.film-frame.is-v { aspect-ratio: 9 / 16; }
+.film-frame.is-s { aspect-ratio: 1 / 1; }
+.grid { align-items: start; }
+
+/* A full-width 9:16 feature would be enormous — a vertical film sits beside
+   its copy instead of above it. */
+.feature.is-v { grid-template-columns: minmax(0, 300px) minmax(0, 46ch); justify-content: start; gap: clamp(24px, 3vw, 56px); align-items: center; }
+.feature.is-v .film-frame { aspect-ratio: 9 / 16; }
+.feature.is-v .feature-meta { grid-template-columns: 1fr; gap: 14px; align-content: center; }
+.feature.is-v .feature-meta h3 { font-size: clamp(1.5rem, 2.4vw, 2.2rem); }
+@media (max-width: 760px) {
+  .feature.is-v { grid-template-columns: 1fr; align-items: start; }
+  .feature.is-v .film-frame { max-width: 320px; }
+}
+
+/* ---------------------------------------------------------------------
+   FILMS PAGE — every film, in its own shape
+   Horizontal runs full width, one per row. Portrait and square ride a
+   drag-and-arrow carousel where a fixed card HEIGHT lets 9:16 and 1:1
+   sit side by side without either being cropped.
+   --------------------------------------------------------------------- */
+.reel-stack { display: grid; gap: clamp(40px, 5vw, 88px); margin-top: clamp(24px, 3vw, 44px); }
+.reel-item .film-frame { aspect-ratio: 16 / 9; }
+.reel-item .film-meta { font-size: 1.02rem; padding-top: 18px; }
+.reel-item .film-title { font-size: clamp(1.15rem, 1.8vw, 1.5rem); }
+
+.carousel { position: relative; margin-top: clamp(22px, 3vw, 40px); }
+.carousel-track {
+  display: flex; gap: clamp(12px, 1.6vw, 24px);
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  padding-inline: var(--gutter); scroll-padding-inline: var(--gutter);
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-track .film { flex: 0 0 auto; scroll-snap-align: start; }
+.carousel-track .film-frame { height: clamp(340px, 52vh, 600px); width: auto; aspect-ratio: 9 / 16; }
+.carousel-track .film-frame.is-s { aspect-ratio: 1 / 1; }
+.carousel-track .film-meta { flex-direction: column; align-items: flex-start; gap: 4px; max-width: 28ch; }
+
+.carousel-nav { display: flex; gap: 12px; margin-top: clamp(20px, 2.4vw, 32px); }
+.carousel-btn {
+  width: 48px; height: 48px; border-radius: 999px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line-2); color: var(--bone);
+  display: grid; place-items: center; transition: background .2s, border-color .2s, opacity .2s;
+}
+.carousel-btn:hover:not(:disabled) { background: var(--bone); border-color: var(--bone); color: var(--ink); }
+.carousel-btn:disabled { opacity: .3; cursor: default; }
+.carousel-btn::after { content: ""; width: 9px; height: 9px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; }
+.carousel-btn[data-carousel-prev]::after { transform: rotate(-135deg); margin-inline-start: 3px; }
+.carousel-btn[data-carousel-next]::after { transform: rotate(45deg); margin-inline-end: 3px; }
+.lang-fa .carousel-btn[data-carousel-prev]::after { transform: rotate(45deg); }
+.lang-fa .carousel-btn[data-carousel-next]::after { transform: rotate(-135deg); }
+
+@media (prefers-reduced-motion: reduce) { .carousel-track { scroll-behavior: auto; } }

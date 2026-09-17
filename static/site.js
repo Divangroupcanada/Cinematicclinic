@@ -366,6 +366,37 @@
     a.classList.add('is-playing');
   });
 
+  /* Carousel — drag/scroll natively, arrows for the keyboard and the mouse.
+     Direction-aware so the arrows point the right way in Persian. */
+  d.querySelectorAll('[data-carousel]').forEach(function (root) {
+    var track = root.querySelector('.carousel-track');
+    var prev = root.querySelector('[data-carousel-prev]');
+    var next = root.querySelector('[data-carousel-next]');
+    if (!track || !prev || !next) return;
+    var rtl = getComputedStyle(track).direction === 'rtl';
+    function step() {
+      var card = track.querySelector('.film');
+      var gap = parseFloat(getComputedStyle(track).columnGap || '16') || 16;
+      return card ? card.getBoundingClientRect().width + gap : track.clientWidth * 0.8;
+    }
+    function go(forward) {
+      var amount = step() * (forward ? 1 : -1) * (rtl ? -1 : 1);
+      track.scrollBy({ left: amount, behavior: reduce ? 'auto' : 'smooth' });
+    }
+    next.addEventListener('click', function () { go(true); });
+    prev.addEventListener('click', function () { go(false); });
+    function sync() {
+      // scrollLeft goes negative in RTL, so compare on magnitude
+      var x = Math.abs(track.scrollLeft);
+      var max = track.scrollWidth - track.clientWidth - 2;
+      prev.disabled = x <= 2;
+      next.disabled = x >= max;
+    }
+    track.addEventListener('scroll', sync, { passive: true });
+    w.addEventListener('resize', sync);
+    sync();
+  });
+
   var chips = d.querySelectorAll('.chip[data-filter]');
   if (chips.length) chips.forEach(function (c) {
     c.addEventListener('click', function () {
