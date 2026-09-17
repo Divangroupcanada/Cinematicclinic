@@ -218,7 +218,7 @@ const film = (lang, v, cls) => {
   const t = lang === 'fa' ? v.title_fa : v.title;
   const cat = lang === 'fa' ? v.cat_fa : v.cat;
   return `<a class="film ${cls || ''}" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cat="${esc(v.cat)}" data-cursor="${esc(c0.ui.play)}" target="_blank" rel="noopener">
-  <span class="film-frame"><img src="${YT_IMG(v.id)}" alt="${esc(t)}" loading="lazy" width="480" height="360" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
+  <span class="film-frame${v.orient === 'v' ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${YT_IMG(v.id)}" alt="${esc(t)}" loading="lazy" width="480" height="360" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
   <span class="film-meta"><span class="film-title">${esc(t)}</span><span class="film-cat">${esc(cat)}</span></span></a>`;
 };
 const faqBlock = (lang, title, faq) => `<section class="section faq"><div class="wrap narrow reveal"><h2 style="margin-bottom:28px">${esc(title)}</h2>
@@ -331,8 +331,9 @@ R.home = (lang) => {
   const selected = h.selected.map((sel, i) => {
     const v = videos.find((x) => x.id === sel.id);
     const t = sel.t || (lang === 'fa' ? v.title_fa : v.title);
-    return `<article class="feature reveal">
-    <a class="film" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cursor="${esc(c.ui.play)}" target="_blank" rel="noopener" aria-label="${esc(t)}"><span class="film-frame"><img src="${YT_IMG(v.id, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'" alt="${esc(t)}" width="1280" height="720" loading="${i ? 'lazy' : 'eager'}" data-parallax="10"><span class="play" aria-hidden="true"></span></span></a>
+    const vert = v.orient === 'v';
+    return `<article class="feature reveal${vert ? ' is-v' : ''}">
+    <a class="film" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cursor="${esc(c.ui.play)}" target="_blank" rel="noopener" aria-label="${esc(t)}"><span class="film-frame${vert ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${YT_IMG(v.id, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'" alt="${esc(t)}" width="1280" height="720" loading="${i ? 'lazy' : 'eager'}" data-parallax="10"><span class="play" aria-hidden="true"></span></span></a>
     <div class="feature-meta"><h3>${esc(t)}</h3><p>${md(sel.d)}</p><span class="label">${esc(sel.k)}</span></div>
   </article>`;
   }).join('\n');
@@ -401,13 +402,28 @@ R.work = (lang) => {
   const catsOrder = ['Brand Film', 'Clinic Tour', 'Practitioner', 'Injectables', 'Facial', 'Laser', 'Skincare', 'Head Spa', 'HIFU', 'Body Contouring', 'Microneedling', 'PRP', 'Dermatology', 'Brows', 'Behind the Scenes'];
   const catLabel = (cat) => (lang === 'fa' ? videos.find((v) => v.cat === cat).cat_fa : cat);
   const sorted = [...videos].sort((a, b) => catsOrder.indexOf(a.cat) - catsOrder.indexOf(b.cat));
+  // Horizontal films run full width; everything portrait or square goes in the
+  // carousel, where a fixed card height lets 9:16 and 1:1 sit together.
+  const wide = sorted.filter((v) => v.orient === 'h');
+  const tall = sorted.filter((v) => v.orient !== 'h');
   const body = `
 <section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(w.eyebrow)}</span><h1>${esc(w.h1)}</h1><p class="lead">${md(w.lead)}</p></div></section>
 <section class="section"><div class="wrap reveal">
   <div class="filters" role="toolbar" aria-label="${esc(w.filterLabel)}"><button class="chip is-on" data-filter="all" aria-pressed="true">${esc(w.all)} <span dir="ltr">(${videos.length})</span></button>${catsOrder.map((cat) => `<button class="chip" data-filter="${esc(cat)}" aria-pressed="false">${esc(catLabel(cat))} <span dir="ltr">(${videos.filter((v) => v.cat === cat).length})</span></button>`).join('')}</div>
-  <div class="grid grid-4" id="films">${sorted.map((v) => film(lang, v)).join('')}</div>
+  <div class="section-head reveal" style="margin-top:clamp(40px,5vw,72px)"><div><span class="label ox">${esc(w.wideTitle)}</span><h2 style="margin-top:14px" dir="ltr">16:9</h2></div><p class="lead" style="margin:0">${md(w.wideLead)}</p></div>
+  <div class="reel-stack" id="films">${wide.map((v) => film(lang, v, 'reel-item')).join('')}</div>
   <p class="note">${md(w.note)}</p>
 </div></section>
+<section class="section">
+  <div class="wrap"><div class="section-head reveal"><div><span class="label ox">${esc(w.vertTitle)}</span><h2 style="margin-top:14px" dir="ltr">9:16</h2></div><p class="lead" style="margin:0">${md(w.vertLead)}</p></div></div>
+  <div class="carousel" data-carousel>
+    <div class="carousel-track">${tall.map((v) => film(lang, v, 'reel-tall')).join('')}</div>
+    <div class="wrap carousel-nav">
+      <button class="carousel-btn" type="button" data-carousel-prev aria-label="${esc(w.prev)}"></button>
+      <button class="carousel-btn" type="button" data-carousel-next aria-label="${esc(w.next)}"></button>
+    </div>
+  </div>
+</section>
 ${cta(lang, w.cta)}`;
   const itemList = { '@context': 'https://schema.org', '@type': 'ItemList', name: w.h1, numberOfItems: videos.length, itemListElement: sorted.map((v, i) => ({ '@type': 'ListItem', position: i + 1, item: videoSchema(lang, v) })) };
   return { title: w.title, desc: w.metaDesc, body, schema: [orgSchema(lang), itemList, breadcrumb(lang, 'work', c.nav.work)] };
