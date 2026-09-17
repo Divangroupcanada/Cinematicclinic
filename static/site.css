@@ -839,3 +839,16 @@ a.vframe .play { position: absolute; inset: 0; margin: auto; }
 .lang-fa .carousel-btn[data-carousel-next]::after { transform: rotate(-135deg); }
 
 @media (prefers-reduced-motion: reduce) { .carousel-track { scroll-behavior: auto; } }
+
+/* FILM META — the card carries a category and the clinic that commissioned it,
+   so the meta line is now long enough to matter. `flex: none` on .film-cat let
+   it push past a 263px carousel card at 390px; it must be allowed to shrink,
+   and on a phone the two halves read better stacked than squeezed side by side. */
+.film-meta { max-width: 100%; min-width: 0; }
+.film-cat { flex: 0 1 auto; min-width: 0; }
+.film-title { min-width: 0; overflow-wrap: anywhere; }
+.carousel-track .film-meta { max-width: 100%; }
+@media (max-width: 640px) {
+  .film-meta { flex-direction: column; align-items: flex-start; gap: 5px; }
+  .film-cat { letter-spacing: .08em; }
+}
