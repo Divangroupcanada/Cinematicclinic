@@ -6,8 +6,11 @@ const path = require('path');
 const SITE = 'https://cinematicclinic.com';
 const OUT = path.join(__dirname, 'dist');
 const videos = require('./content/videos.json');
+// Blog posts. Empty is a valid state: the index renders its empty note, nothing
+// is added to the nav, the sitemap or the feed, and no dead link ever ships.
+const posts = require('./content/posts.json');
 const LANGS = { en: require('./content/en.json'), fa: require('./content/fa.json') };
-const PAGES = ['home', 'work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', 'consent', 'privacy', 'contact'];
+const PAGES = ['home', 'work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', 'blog', 'consent', 'privacy', 'contact'];
 const YT_IMG = (id, q) => `https://i.ytimg.com/vi/${id}/${q || 'hqdefault'}.jpg`;
 const HERO_ID = 'OsLZLrxW6UQ';
 // The band is the horizontal counterpart — the hero film is vertical (9:16),
@@ -26,6 +29,8 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
 const paras = (arr) => arr.map((p) => `<p>${md(p)}</p>`).join('\n');
 const url = (lang, page) => (lang === 'en' ? '' : '/fa') + (page === 'home' ? '/' : `/${page}/`);
+const postUrl = (lang, slug) => (lang === 'en' ? '' : '/fa') + `/blog/${slug}/`;
+const postAbs = (lang, slug) => SITE + postUrl(lang, slug);
 const abs = (lang, page) => SITE + url(lang, page);
 
 function write(rel, content) {
@@ -46,7 +51,7 @@ function layout(lang, page, { title, desc, body, schema, ogImage, noindex }) {
   const canonical = abs(lang, page);
   const og = ogImage || SITE + '/assets/og.jpg';
   const ld = (schema || []).map((o) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n');
-  const navItems = ['work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about'];
+  const navItems = ['work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', 'blog'];
   return `<!DOCTYPE html>
 <html lang="${lang === 'fa' ? 'fa' : 'en'}" dir="${c.dir}">
 <head>
@@ -78,6 +83,7 @@ function layout(lang, page, { title, desc, body, schema, ogImage, noindex }) {
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs.txt — AI-readable site overview">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+<link rel="alternate" type="application/rss+xml" title="${esc(c.blog.h1)}" href="${lang === 'en' ? '' : '/fa'}/blog/feed.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com">
@@ -93,7 +99,7 @@ ${ld}
     <a class="brand" href="${url(lang, 'home')}" aria-label="Cinematic Clinic"><span class="brand-mark">CC</span><span class="brand-name">Cinematic Clinic</span></a>
     <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="${esc(c.ui.menu)}"><span></span><span></span></button>
     <nav id="nav" class="nav">
-      ${navItems.map((p) => `<a href="${url(lang, p)}"${p === page ? ' aria-current="page"' : ''}>${esc(c.nav[p])}</a>`).join('')}
+      ${navItems.filter((p) => p !== 'blog' || posts.length).map((p) => `<a href="${url(lang, p)}"${p === page ? ' aria-current="page"' : ''}>${esc(c.nav[p])}</a>`).join('')}
       <a class="lang" href="${url(other, page)}" lang="${other}" hreflang="${other}">${esc(c.nav.lang)}</a>
       <a class="btn btn-small" href="${url(lang, 'contact')}">${esc(c.nav.contact)}</a>
     </nav>
@@ -113,7 +119,7 @@ ${body}
     </div>
     <div>
       <div class="foot-h">${esc(c.footer.pages)}</div>
-      ${['work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', 'consent', 'contact'].map((p) => `<a href="${url(lang, p)}">${esc(c.nav[p] || c.footer[p])}</a>`).join('')}
+      ${['work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', ...(posts.length ? ['blog'] : []), 'consent', 'contact'].map((p) => `<a href="${url(lang, p)}">${esc(c.nav[p] || c.footer[p])}</a>`).join('')}
     </div>
     <div>
       <div class="foot-h">${esc(c.footer.connect)}</div>
@@ -234,6 +240,28 @@ const film = (lang, v, cls, big) => {
   <span class="film-frame${v.orient === 'v' ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${src}"${fallback} alt="${esc(t)}" loading="lazy" width="${big ? 1280 : 480}" height="${big ? 720 : 360}" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
   <span class="film-meta"><span class="film-title">${esc(t)}</span><span class="film-cat">${esc(ven ? `${cat} · ${ven}` : cat)}</span></span></a>`;
 };
+// Film blocks, shared by every page. `pick` returns films ranked best-first
+// (see `star`), optionally narrowed to categories or one orientation and capped.
+// Every page that shows work uses these, so a page never invents its own layout.
+const pick = ({ cat, orient, n, exclude } = {}) => {
+  const cats = cat ? (Array.isArray(cat) ? cat : [cat]) : null;
+  const skip = new Set(exclude || []);
+  let list = [...videos].sort(byStar).filter((v) => !skip.has(v.id));
+  if (cats) list = list.filter((v) => cats.includes(v.cat));
+  if (orient) list = list.filter((v) => (orient === 'h' ? v.orient === 'h' : v.orient !== 'h'));
+  return n ? list.slice(0, n) : list;
+};
+const wideStack = (lang, list, id) => `<div class="reel-stack"${id ? ` id="${id}"` : ''}>${list.map((v) => film(lang, v, 'reel-item reveal', true)).join('')}</div>`;
+const carousel = (lang, list, ui) => `<div class="carousel" data-carousel>
+  <div class="carousel-track">${list.map((v) => film(lang, v, 'reel-tall')).join('')}</div>
+  <div class="wrap carousel-nav">
+    <button class="carousel-btn" type="button" data-carousel-prev aria-label="${esc(ui.prev)}"></button>
+    <button class="carousel-btn" type="button" data-carousel-next aria-label="${esc(ui.next)}"></button>
+  </div>
+</div>`;
+// A section head with no lead paragraph — the films are the argument.
+const filmHead = (kicker, title, link) => `<div class="section-head reveal"><div><span class="label ox">${esc(kicker)}</span><h2 style="margin-top:14px">${esc(title)}</h2></div>${link || ''}</div>`;
+
 const faqBlock = (lang, title, faq) => `<section class="section faq"><div class="wrap narrow reveal"><h2 style="margin-bottom:28px">${esc(title)}</h2>
 ${faq.map((f) => `<details><summary>${esc(f.q)}</summary><div class="faq-a">${paras(Array.isArray(f.a) ? f.a : [f.a])}</div></details>`).join('\n')}</div></section>`;
 const cta = (lang, c) => `<section class="closing rule"><div class="wrap reveal"><h2>${md(c.title)}</h2><p>${md(c.text)}</p><p class="cta-row"><a class="btn" href="${url(lang, 'contact')}">${esc(c.button)}</a><a class="link" href="mailto:balamchi@divangroup.ca" dir="ltr">balamchi@divangroup.ca</a></p></div></section>`;
@@ -341,15 +369,12 @@ R.home = (lang) => {
     ? `<video autoplay muted playsinline preload="auto" poster="/assets/hero-poster.jpg" aria-hidden="true" tabindex="-1"><source src="/assets/hero.webm" type="video/webm"><source src="/assets/hero.mp4" type="video/mp4"></video>`
     : '';
   const mediaAttr = hasMp4 ? '' : ` data-yt="${HERO_ID}" data-title="${esc(heroTitle)}"`;
-  const selected = h.selected.map((sel, i) => {
-    const v = videos.find((x) => x.id === sel.id);
-    const t = sel.t || (lang === 'fa' ? v.title_fa : v.title);
-    const vert = v.orient === 'v';
-    return `<article class="feature reveal${vert ? ' is-v' : ''}">
-    <a class="film" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cursor="${esc(c.ui.play)}" target="_blank" rel="noopener" aria-label="${esc(t)}"><span class="film-frame${vert ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${YT_IMG(v.id, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'" alt="${esc(t)}" width="1280" height="720" loading="${i ? 'lazy' : 'eager'}" data-parallax="10"><span class="play" aria-hidden="true"></span></span></a>
-    <div class="feature-meta"><h3>${esc(t)}</h3><p>${md(sel.d)}</p><span class="label">${esc(sel.k)}</span></div>
-  </article>`;
-  }).join('\n');
+  // This is a portfolio home page: the films carry it, the copy gets out of the
+  // way. Everything that used to be a paragraph here — the manifesto, the
+  // positioning essay, the process steps, the FAQ — belongs on the service pages
+  // and the blog, where a reader who wants it goes looking for it.
+  const wide = pick({ orient: 'h', n: 6, exclude: [HERO_ID, BAND_ID] });
+  const tall = pick({ orient: 'v', n: 14 });
   const body = `
 <section class="hero">
   <div class="hero-media"${mediaAttr} style="background-image:url('${hasMp4 ? '/assets/hero-poster.jpg' : YT_IMG(HERO_ID, 'maxresdefault')}')">${media}</div>
@@ -365,47 +390,34 @@ R.home = (lang) => {
     </div>
   </div>
 </section>
-<section class="led">
-  ${h.led.map((b, i) => `<div class="reveal" data-delay="${i}"><span class="label ox">${esc(b.k)}</span><h2>${md(b.t)}</h2><p>${md(b.d)}</p><div class="tags">${b.tags.map((x) => `<span>${esc(x)}</span>`).join('')}</div></div>`).join('')}
-</section>
 ${filmBand(lang, h)}
-<section class="section"><div class="wrap reveal">
-  <p class="manifesto">${md(h.manifesto)}</p>
-  <p class="entity" style="margin-top:36px">${md(h.entity)}</p>
+<section class="section rule"><div class="wrap">
+  ${filmHead(h.bandEyebrow, h.selectedTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a>`)}
+  ${wideStack(lang, wide)}
+</div></section>
+<section class="section">
+  <div class="wrap">${filmHead(h.vertEyebrow, h.vertTitle)}</div>
+  ${carousel(lang, tall, c.ui)}
+</section>
+<section class="section"><div class="wrap narrow reveal">
+  <p class="entity">${md(h.line)}</p>
 </div></section>
 <section class="section proof"><div class="wrap proof-row">
   <div class="reveal">${photo('shahab-rig', c.media.rig, 800, 879, 'photo proof-img')}</div>
   <div class="reveal" data-delay="1">
     <span class="label ox">${esc(c.media.proofLabel)}</span>
     <h2>${md(c.media.proofTitle)}</h2>
-    <p class="lead">${md(c.media.proofText)}</p>
   </div>
 </div></section>
 <section class="marquee" aria-hidden="true"><div class="marquee-track">${[0, 1].map(() => h.marquee.map((m) => `<span>${esc(m)}</span>`).join('')).join('')}</div></section>
-<section class="section rule" style="padding-top:clamp(56px,7vw,96px)"><div class="wrap">
-  <div class="section-head reveal"><h2>${esc(h.selectedTitle)}</h2><a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a></div>
-  <div class="selected">${selected}</div>
-</div></section>
-${verticalStrip(lang, h)}
 <section class="section"><div class="wrap">
   <div class="section-head reveal"><h2>${esc(h.offersTitle)}</h2></div>
   ${cards(lang, h.offers)}
 </div></section>
 <section class="section"><div class="wrap">
-  <div class="section-head reveal"><div><span class="label ox">${esc(h.processLabel)}</span><h2 style="margin-top:14px">${esc(h.processTitle)}</h2></div><p class="lead" style="margin:0">${md(h.processLead)}</p></div>
-  ${steps(h.process)}
-  <p class="note reveal">${md(h.consentNote)}</p>
-</div></section>
-<section class="section"><div class="wrap">
   <div class="section-head reveal"><h2>${esc(h.numbersTitle)}</h2></div>
   ${stats(c.stats)}
 </div></section>
-<section class="section"><div class="wrap positioning">
-  <div class="reveal"><span class="label ox">${esc(h.whyLabel)}</span><h2 style="margin-top:14px">${esc(h.whyTitle)}</h2></div>
-  <div>${h.why.map((w, i) => `<div class="why-item reveal" data-delay="${i}"><h3>${esc(w.t)}</h3><p>${md(w.d)}</p></div>`).join('')}</div>
-</div></section>
-${faqBlock(lang, h.faqTitle, h.faq)}
-<section class="wrap academy-strip reveal"><div><span class="label ox">${esc(h.academyEyebrow)}</span><h2 style="margin-top:14px">${esc(h.academyTitle)}</h2></div><div><p>${md(h.academyText)}</p><a class="btn btn-ghost" href="${url(lang, 'academy')}">${esc(h.academyCta)}</a></div></section>
 ${cta(lang, h.cta)}`;
   return { title: h.title, desc: h.metaDesc, body, schema: [orgSchema(lang), personSchema(lang), websiteSchema(lang), faqSchema(h.faq), breadcrumb(lang, 'home', c.ui.home)] };
 };
@@ -442,36 +454,58 @@ ${cta(lang, w.cta)}`;
   return { title: w.title, desc: w.metaDesc, body, schema: [orgSchema(lang), itemList, breadcrumb(lang, 'work', c.nav.work)] };
 };
 
-function offerPage(lang, page, key, extra) {
+function offerPage(lang, page, key, extra, filmBlock) {
   const c = LANGS[lang], o = c[key];
   const body = `
 <section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(o.eyebrow)}</span><h1>${esc(o.h1)}</h1><p class="lead">${md(o.lead)}</p><p class="cta-row"><a class="btn" href="${url(lang, 'contact')}">${esc(o.cta.button)}</a></p></div></section>
 <section class="section"><div class="wrap narrow reveal">${paras(o.intro)}</div></section>
+${filmBlock || ''}
 ${o.blocks.map((b) => `<section class="section"><div class="wrap narrow reveal"><h2>${esc(b.t)}</h2>${b.p ? paras(b.p) : ''}${b.list ? list(b.list) : ''}${b.steps ? steps(b.steps) : ''}</div></section>`).join('')}
 ${extra || ''}
 ${faqBlock(lang, o.faqTitle, o.faq)}
 ${cta(lang, o.cta)}`;
   return { title: o.title, desc: o.metaDesc, body, schema: [orgSchema(lang), serviceSchema(lang, page, o.h1, o.metaDesc), faqSchema(o.faq), breadcrumb(lang, page, c.nav[page])] };
 }
-R['clinic-film'] = (lang) => offerPage(lang, 'clinic-film', 'clinicFilm');
-R['doctor-series'] = (lang) => {
-  const docs = videos.filter((v) => v.cat === 'Practitioner');
+// Wide stack + 9:16 carousel drawn from one slice of the catalogue, so every
+// page argues with the actual work rather than describing it.
+function filmProof(lang, { cat, wideN = 4, tallN = 12, kicker, title, exclude } = {}) {
   const c = LANGS[lang];
-  const extra = `<section class="section"><div class="wrap reveal"><h2 class="section-h">${esc(c.doctorSeries.proofTitle)}</h2><div class="grid grid-4">${docs.map((v) => film(lang, v)).join('')}</div></div></section>`;
-  return offerPage(lang, 'doctor-series', 'doctorSeries', extra);
+  const wide = pick({ cat, orient: 'h', n: wideN, exclude });
+  const tall = pick({ cat, orient: 'v', n: tallN, exclude });
+  if (!wide.length && !tall.length) return '';
+  return `<section class="section rule">
+  <div class="wrap">${filmHead(kicker, title, `<a class="link arrow" href="${url(lang, 'work')}">${esc(c.home.filmsAll)}</a>`)}
+  ${wide.length ? wideStack(lang, wide) : ''}</div>
+  ${tall.length ? carousel(lang, tall, c.ui) : ''}
+</section>`;
+}
+R['clinic-film'] = (lang) => {
+  const c = LANGS[lang];
+  return offerPage(lang, 'clinic-film', 'clinicFilm', '', filmProof(lang, { cat: ['Brand Film', 'Head Spa'], kicker: c.home.bandEyebrow, title: c.home.selectedTitle }));
 };
-R['film-week'] = (lang) => offerPage(lang, 'film-week', 'filmWeek');
+R['doctor-series'] = (lang) => {
+  const c = LANGS[lang];
+  return offerPage(lang, 'doctor-series', 'doctorSeries', '', filmProof(lang, { cat: 'Practitioner', wideN: 5, tallN: 15, kicker: c.home.bandEyebrow, title: c.doctorSeries.proofTitle }));
+};
+R['film-week'] = (lang) => {
+  const c = LANGS[lang];
+  return offerPage(lang, 'film-week', 'filmWeek', '', filmProof(lang, { wideN: 4, tallN: 12, kicker: c.home.bandEyebrow, title: c.home.selectedTitle }));
+};
 
 R.academy = (lang) => {
   const c = LANGS[lang], a = c.academy;
-  const bts = videos.filter((v) => v.cat === 'Behind the Scenes');
+  const btsWide = pick({ cat: 'Behind the Scenes', orient: 'h', n: 3 });
+  const btsTall = pick({ cat: 'Behind the Scenes', orient: 'v', n: 14 });
   const body = `
 <section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(a.eyebrow)}</span><h1>${md(a.h1)}</h1><p class="lead">${md(a.lead)}</p><p class="cta-row"><a class="btn" href="#waitlist">${esc(a.cta1)}</a><a class="btn btn-ghost" href="#modules">${esc(a.cta2)}</a></p></div></section>
 <section class="section"><div class="wrap narrow reveal">${paras(a.intro)}</div></section>
 <section class="section" id="modules"><div class="wrap narrow reveal"><h2>${esc(a.modulesTitle)}</h2>
 <ol class="modules">${a.modules.map((m) => `<li><span class="mod-n" dir="ltr">${esc(m.n)}</span><span class="mod-b"><strong>${esc(m.t)}</strong><span>${esc(m.d)}</span><span class="mod-len" dir="ltr">${esc(m.len)}</span></span></li>`).join('')}</ol></div></section>
 <section class="section"><div class="wrap narrow reveal"><h2>${esc(a.operatorTitle)}</h2>${paras(a.operator)}</div></section>
-<section class="section"><div class="wrap reveal"><h2 class="section-h">${esc(a.btsTitle)}</h2><div class="grid">${bts.map((v) => film(lang, v)).join('')}</div></div></section>
+<section class="section rule">
+  <div class="wrap">${filmHead(a.eyebrow, a.btsTitle)}${btsWide.length ? wideStack(lang, btsWide) : ''}</div>
+  ${btsTall.length ? carousel(lang, btsTall, c.ui) : ''}
+</section>
 <section class="section" id="waitlist"><div class="wrap narrow reveal"><h2>${esc(a.waitlistTitle)}</h2>${paras(a.waitlist)}${form(lang, c, 'academy')}</div></section>
 ${faqBlock(lang, a.faqTitle, a.faq)}`;
   const course = { '@context': 'https://schema.org', '@type': 'Course', '@id': abs(lang, 'academy') + '#course', name: a.courseName, description: a.metaDesc, provider: { '@id': SITE + '/#organization' }, instructor: { '@id': SITE + '/#shahab' }, inLanguage: ['en', 'fa'], courseMode: 'online', teaches: a.modules.map((m) => m.t), url: abs(lang, 'academy') };
@@ -488,6 +522,7 @@ R.about = (lang) => {
 </div></section>
 <section class="section"><div class="wrap narrow reveal">${stats(c.stats)}</div></section>
 <section class="section"><div class="wrap narrow reveal"><h2>${esc(a.factsTitle)}</h2><dl class="facts">${a.facts.map((f) => `<div><dt>${esc(f.k)}</dt><dd>${md(f.v)}</dd></div>`).join('')}</dl></div></section>
+${filmProof(lang, { wideN: 3, tallN: 12, kicker: c.home.bandEyebrow, title: c.home.selectedTitle })}
 <section class="section"><div class="wrap narrow reveal"><h2>${esc(a.divanTitle)}</h2>${paras(a.divan)}</div></section>
 <section class="section"><div class="wrap narrow reveal"><h2>${esc(a.voiceTitle)}</h2>${paras(a.voice)}</div></section>
 ${cta(lang, a.cta)}`;
@@ -512,6 +547,79 @@ R.privacy = (lang) => {
   return { title: p.title, desc: p.metaDesc, body, schema: [breadcrumb(lang, 'privacy', c.footer.privacy)], noindex: false };
 };
 
+// ---------- blog ----------
+// Posts carry per-language bodies; a post missing a language is simply not
+// published in it, rather than shipping half-translated.
+const postFor = (post, lang) => post[lang] || null;
+const postDate = (iso, lang) => new Date(iso + 'T12:00:00Z').toLocaleDateString(lang === 'fa' ? 'fa-IR' : 'en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+const livePosts = (lang) => posts
+  .filter((p) => postFor(p, lang))
+  .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+const postCard = (lang, p) => {
+  const b = postFor(p, lang), c = LANGS[lang];
+  const still = p.hero ? `<span class="film-frame"><img src="${YT_IMG(p.hero, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(p.hero)}'" alt="" width="1280" height="720" loading="lazy" data-parallax="8"></span>` : '';
+  return `<a class="post-card reveal" href="${postUrl(lang, p.slug)}">
+  ${still}
+  <span class="post-meta"><time datetime="${p.date}">${esc(postDate(p.date, lang))}</time>${p.cat ? `<span class="label">${esc(lang === 'fa' ? (videos.find((v) => v.cat === p.cat) || {}).cat_fa || p.cat : p.cat)}</span>` : ''}</span>
+  <span class="post-title">${esc(b.title)}</span>
+  <span class="post-lead">${esc(b.desc)}</span>
+  <span class="link arrow">${esc(c.blog.readMore)}</span>
+</a>`;
+};
+
+R.blog = (lang) => {
+  const c = LANGS[lang], g = c.blog;
+  const list = livePosts(lang);
+  const body = `
+<section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(g.eyebrow)}</span><h1>${esc(g.h1)}</h1><p class="lead">${md(g.lead)}</p></div></section>
+<section class="section"><div class="wrap">
+  ${list.length ? `<div class="post-grid">${list.map((p) => postCard(lang, p)).join('')}</div>` : `<p class="note reveal">${md(g.empty)}</p>`}
+</div></section>
+${list.length ? '' : `<section class="section rule"><div class="wrap">${filmHead(c.home.bandEyebrow, c.home.selectedTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(c.home.filmsAll)}</a>`)}${wideStack(lang, pick({ orient: 'h', n: 3 }))}</div></section>`}
+${cta(lang, g.cta)}`;
+  const blogSchema = {
+    '@context': 'https://schema.org', '@type': 'Blog', '@id': abs(lang, 'blog') + '#blog',
+    name: g.h1, description: g.metaDesc, url: abs(lang, 'blog'), inLanguage: lang,
+    publisher: { '@id': SITE + '/#organization' }, author: { '@id': SITE + '/#shahab' },
+    blogPost: list.map((p) => ({ '@type': 'BlogPosting', headline: postFor(p, lang).title, url: postAbs(lang, p.slug), datePublished: p.date })),
+  };
+  return { title: g.title, desc: g.metaDesc, body, schema: [orgSchema(lang), blogSchema, breadcrumb(lang, 'blog', c.nav.blog)] };
+};
+
+function postPage(lang, p) {
+  const c = LANGS[lang], g = c.blog, b = postFor(p, lang);
+  const still = p.hero ? `<div class="wrap reveal"><span class="film-frame">
+    <img src="${YT_IMG(p.hero, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(p.hero)}'" alt="" width="1280" height="720" data-parallax="10">
+  </span></div>` : '';
+  const body = `
+<section class="page-head"><div class="wrap narrow reveal in">
+  <a class="link arrow back" href="${url(lang, 'blog')}">${esc(g.backToBlog)}</a>
+  <h1>${esc(b.title)}</h1>
+  <p class="lead">${md(b.desc)}</p>
+  <p class="post-byline"><span>${esc(g.author)}</span> · <time datetime="${p.date}">${esc(postDate(p.date, lang))}</time>${p.updated && p.updated !== p.date ? ` · ${esc(g.updated)} <time datetime="${p.updated}">${esc(postDate(p.updated, lang))}</time>` : ''}</p>
+</div></section>
+${still ? `<section class="section">${still}</section>` : ''}
+<article class="section post-body">${(b.body || []).map((sec) => `<div class="wrap narrow reveal">${sec.h ? `<h2>${esc(sec.h)}</h2>` : ''}${sec.p ? paras(sec.p) : ''}${sec.list ? list(sec.list) : ''}</div>`).join('')}</article>
+${p.films && p.films.length ? `<section class="section rule"><div class="wrap">${filmHead(c.home.bandEyebrow, c.home.selectedTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(c.home.filmsAll)}</a>`)}${wideStack(lang, videos.filter((v) => p.films.includes(v.id)))}</div></section>` : ''}
+${b.faq && b.faq.length ? faqBlock(lang, c.clinicFilm.faqTitle, b.faq) : ''}
+${cta(lang, g.cta)}`;
+  const article = {
+    '@context': 'https://schema.org', '@type': 'BlogPosting', '@id': postAbs(lang, p.slug) + '#article',
+    headline: b.title, description: b.desc, inLanguage: lang,
+    datePublished: p.date, dateModified: p.updated || p.date,
+    author: { '@id': SITE + '/#shahab' }, publisher: { '@id': SITE + '/#organization' },
+    mainEntityOfPage: postAbs(lang, p.slug), isPartOf: { '@id': abs(lang, 'blog') + '#blog' },
+    ...(p.hero ? { image: YT_IMG(p.hero, 'maxresdefault') } : {}),
+  };
+  const crumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: c.ui.home, item: abs(lang, 'home') },
+    { '@type': 'ListItem', position: 2, name: c.nav.blog, item: abs(lang, 'blog') },
+    { '@type': 'ListItem', position: 3, name: b.title, item: postAbs(lang, p.slug) },
+  ] };
+  return { title: `${b.title} | ${c.nav.blog} — Cinematic Clinic`, desc: b.desc, body, schema: [orgSchema(lang), article, ...(b.faq && b.faq.length ? [faqSchema(b.faq)] : []), crumb] };
+}
+
 R.contact = (lang) => {
   const c = LANGS[lang], k = c.contact;
   const body = `
@@ -529,12 +637,19 @@ fs.mkdirSync(path.join(OUT, 'assets'), { recursive: true });
 for (const f of fs.readdirSync(path.join(__dirname, 'static'))) fs.copyFileSync(path.join(__dirname, 'static', f), path.join(OUT, /\.(css|js|mp4|webm|jpg|jpeg|png|webp|avif)$/.test(f) ? 'assets/' + f : f));
 
 const urls = [];
+const postUrls = [];
 for (const lang of Object.keys(LANGS)) {
   for (const page of PAGES) {
     const r = R[page](lang);
     const html = layout(lang, page, r);
     write(url(lang, page).replace(/^\//, '') + 'index.html', html);
     urls.push({ loc: abs(lang, page), lang, page });
+  }
+  // one page per post per language it exists in
+  for (const post of livePosts(lang)) {
+    const r = postPage(lang, post);
+    write(postUrl(lang, post.slug).replace(/^\//, '') + 'index.html', layout(lang, 'blog', r));
+    postUrls.push({ loc: postAbs(lang, post.slug), lang, slug: post.slug, date: post.updated || post.date });
   }
   const nf = LANGS[lang].notFound;
   write((lang === 'en' ? '' : 'fa/') + '404.html', layout(lang, 'home', { title: nf.title, desc: nf.title, noindex: true, body: `<section class="page-head"><div class="wrap reveal in"><h1>${esc(nf.h1)}</h1><p class="lead">${esc(nf.text)}</p><p><a class="btn" href="${url(lang, 'home')}">${esc(nf.button)}</a></p></div></section>` }));
@@ -543,9 +658,42 @@ for (const lang of Object.keys(LANGS)) {
 // sitemap with hreflang pairs
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${urls.map((u) => `  <url><loc>${u.loc}</loc><xhtml:link rel="alternate" hreflang="en" href="${abs('en', u.page)}"/><xhtml:link rel="alternate" hreflang="fa" href="${abs('fa', u.page)}"/><xhtml:link rel="alternate" hreflang="x-default" href="${abs('en', u.page)}"/><changefreq>${u.page === 'work' ? 'weekly' : 'monthly'}</changefreq><priority>${u.page === 'home' ? '1.0' : u.page === 'privacy' ? '0.2' : '0.8'}</priority></url>`).join('\n')}
+${urls.filter((u) => u.page !== 'blog' || posts.length).map((u) => `  <url><loc>${u.loc}</loc><xhtml:link rel="alternate" hreflang="en" href="${abs('en', u.page)}"/><xhtml:link rel="alternate" hreflang="fa" href="${abs('fa', u.page)}"/><xhtml:link rel="alternate" hreflang="x-default" href="${abs('en', u.page)}"/><changefreq>${u.page === 'work' ? 'weekly' : 'monthly'}</changefreq><priority>${u.page === 'home' ? '1.0' : u.page === 'privacy' ? '0.2' : '0.8'}</priority></url>`).join('\n')}
+${postUrls.map((u) => {
+  const both = posts.find((p) => p.slug === u.slug);
+  const alts = ['en', 'fa'].filter((l) => postFor(both, l));
+  return `  <url><loc>${u.loc}</loc>${alts.map((l) => `<xhtml:link rel="alternate" hreflang="${l}" href="${postAbs(l, u.slug)}"/>`).join('')}${alts.includes('en') ? `<xhtml:link rel="alternate" hreflang="x-default" href="${postAbs('en', u.slug)}"/>` : ''}<lastmod>${u.date}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+}).join('\n')}
 </urlset>
 `);
+
+// RSS, one feed per language. Written whatever the post count so the URL is
+// stable for anyone who subscribes early.
+for (const lang of Object.keys(LANGS)) {
+  const c = LANGS[lang], list = livePosts(lang);
+  const feedPath = (lang === 'en' ? '' : 'fa/') + 'blog/feed.xml';
+  write(feedPath, `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>${esc(c.blog.h1)} — Cinematic Clinic</title>
+  <link>${abs(lang, 'blog')}</link>
+  <description>${esc(c.blog.metaDesc)}</description>
+  <language>${lang}</language>
+  <atom:link href="${SITE}/${feedPath}" rel="self" type="application/rss+xml"/>
+${list.map((p) => {
+  const b = postFor(p, lang);
+  return `  <item>
+    <title>${esc(b.title)}</title>
+    <link>${postAbs(lang, p.slug)}</link>
+    <guid isPermaLink="true">${postAbs(lang, p.slug)}</guid>
+    <pubDate>${new Date(p.date + 'T12:00:00Z').toUTCString()}</pubDate>
+    <description>${esc(b.desc)}</description>
+  </item>`;
+}).join('\n')}
+</channel>
+</rss>
+`);
+}
 
 write('robots.txt', `# Cinematic Clinic — cinematicclinic.com
 User-agent: *
@@ -594,7 +742,7 @@ Cinematic Clinic is the film practice of Shahab Balamchi, a Toronto-based commer
 - Contact: balamchi@divangroup.ca
 
 ## Pages
-${PAGES.filter((p) => p !== 'privacy').map((p) => `- [${strip(LANGS.en[p === 'home' ? 'home' : p === 'clinic-film' ? 'clinicFilm' : p === 'doctor-series' ? 'doctorSeries' : p === 'film-week' ? 'filmWeek' : p].h1)}](${abs('en', p)}): ${strip(LANGS.en[p === 'home' ? 'home' : p === 'clinic-film' ? 'clinicFilm' : p === 'doctor-series' ? 'doctorSeries' : p === 'film-week' ? 'filmWeek' : p].metaDesc)}`).join('\n')}
+${PAGES.filter((p) => p !== 'privacy' && (p !== 'blog' || posts.length)).map((p) => `- [${strip(LANGS.en[p === 'home' ? 'home' : p === 'clinic-film' ? 'clinicFilm' : p === 'doctor-series' ? 'doctorSeries' : p === 'film-week' ? 'filmWeek' : p].h1)}](${abs('en', p)}): ${strip(LANGS.en[p === 'home' ? 'home' : p === 'clinic-film' ? 'clinicFilm' : p === 'doctor-series' ? 'doctorSeries' : p === 'film-week' ? 'filmWeek' : p].metaDesc)}`).join('\n')}
 - Persian version: ${abs('fa', 'home')}
 
 ## Optional
