@@ -12,7 +12,9 @@
     "menu": "Menu",
     "home": "Home",
     "close": "Close",
-    "play": "Play"
+    "play": "Play",
+    "prev": "Previous films",
+    "next": "More films"
   },
   "nav": {
     "work": "Films",
@@ -22,7 +24,8 @@
     "academy": "Academy",
     "about": "About",
     "contact": "Work with me",
-    "lang": "فارسی"
+    "lang": "فارسی",
+    "blog": "Journal"
   },
   "footer": {
     "pages": "Pages",
@@ -103,21 +106,21 @@
         "page": "clinic-film",
         "k": "Signature",
         "t": "The Clinic Film",
-        "d": "One shoot day. A 60–90 second cinematic brand film, six vertical cuts for social, twenty stills, full usage rights. For openings, rebrands, second locations and new treatments.",
+        "d": "One shoot day. A 60–90 second brand film, six vertical cuts, twenty stills, full usage rights.",
         "more": "How it works"
       },
       {
         "page": "doctor-series",
         "k": "For the physician",
         "t": "The Doctor Series",
-        "d": "A profile film and ten short scripted episodes that make the doctor or owner the face of the practice — calm, credible, on camera.",
+        "d": "A profile film and ten short episodes that put the doctor on camera.",
         "more": "See the series"
       },
       {
         "page": "film-week",
         "k": "International",
         "t": "Film Week",
-        "d": "I travel to one city for a week and film three to five clinics back to back — the United States, Spain and the UAE. Same eye, same standard, shared travel.",
+        "d": "A week in one city, three to five clinics, filmed back to back.",
         "more": "Cities and dates"
       }
     ],
@@ -258,7 +261,8 @@
     "bandWatch": "Watch the reel",
     "vertEyebrow": "Vertical",
     "vertTitle": "Cut for the feed.",
-    "vertLead": "The same direction, framed 9:16 — the version that actually runs on Instagram and TikTok, not a horizontal film squeezed into a phone."
+    "vertLead": "The same direction, framed 9:16 — the version that actually runs on Instagram and TikTok, not a horizontal film squeezed into a phone.",
+    "line": "**Cinematic Clinic** is the film practice of **Shahab Balamchi** — seven years inside beauty and health clinics, forty-plus practices, five thousand hours behind the lens. Canada, the United States, Spain, the UAE."
   },
   "work": {
     "title": "Clinic Films — 217 Cosmetic Clinic & Med Spa Videos",
@@ -288,8 +292,7 @@
     "h1": "The Clinic Film",
     "lead": "One day inside your clinic. One film that shows what it feels like to be treated there — and a set of cuts that carry that feeling across every channel.",
     "intro": [
-      "**The Clinic Film** is a cinematic brand film for a single beauty or health practice: dermatology, plastic surgery, medical aesthetics, cosmetic dentistry, wellness. It is filmed by Shahab Balamchi in one shoot day and produced by Divan Group. Clinics commission it at five moments — an opening, a rebrand, a second location, a new device or treatment, and when the owner decides the practice needs a face.",
-      "No two clinics are scoped the same, so there is no price list. Send one message about the clinic and I will come back with a scope."
+      "**The Clinic Film** is a cinematic brand film for a single beauty or health practice: dermatology, plastic surgery, medical aesthetics, cosmetic dentistry, wellness. It is filmed by Shahab Balamchi in one shoot day and produced by Divan Group. Clinics commission it at five moments — an opening, a rebrand, a second location, a new device or treatment, and when the owner decides the practice needs a face."
     ],
     "blocks": [
       {
@@ -371,8 +374,7 @@
     "lead": "People choose a doctor before they choose a clinic. This series puts the practitioner on camera — calm, credible and consistent — in a profile film and ten short episodes.",
     "proofTitle": "Practitioners on camera",
     "intro": [
-      "**The Doctor Series** is a founder-led video series for a physician, surgeon, dentist or clinic owner. In half a day we film a 60-second profile piece and ten vertical episodes, each answering one question a patient actually asks. Scripts are prepared together beforehand; on the day, my job is to make the doctor forget the camera is there.",
-      "It is the same thing I do for myself. Trust in this industry attaches to people, not logos, and the practitioner who explains things clearly on camera becomes the one patients ask for by name."
+      "**The Doctor Series** is a founder-led video series for a physician, surgeon, dentist or clinic owner. In half a day we film a 60-second profile piece and ten vertical episodes, each answering one question a patient actually asks. Scripts are prepared together beforehand; on the day, my job is to make the doctor forget the camera is there."
     ],
     "blocks": [
       {
@@ -440,8 +442,7 @@
     "h1": "Film Week",
     "lead": "One city. One week. Three to five clinics filmed back to back, to the same standard as Toronto — with the travel shared and a local crew beside me.",
     "intro": [
-      "**Film Week** is how Cinematic Clinic works outside Canada. Instead of flying for a single clinic, I travel to one city — Los Angeles, Dubai, Barcelona — for five to seven days and film several clinics in a row. Each clinic receives a full Clinic Film or Doctor Series; the travel cost is shared, and a local second shooter from the Film Academy network supports the shoot and any follow-up.",
-      "A Film Week is confirmed when three clinics in the same city have signed. Dates are announced to the waitlist first."
+      "**Film Week** is how Cinematic Clinic works outside Canada. Instead of flying for a single clinic, I travel to one city — Los Angeles, Dubai, Barcelona — for five to seven days and film several clinics in a row. Each clinic receives a full Clinic Film or Doctor Series; the travel cost is shared, and a local second shooter from the Film Academy network supports the shoot and any follow-up."
     ],
     "blocks": [
       {
@@ -520,8 +521,7 @@
     "cta1": "Join the waitlist",
     "cta2": "See what's inside",
     "intro": [
-      "Every week a videographer asks me the same question: *how do you make clinics look like that?* The honest answer is a method, not a camera. The **Film Academy for the Beauty Business** is that method — six modules covering everything from how to enter the niche to how to turn one shoot into a monthly retainer.",
-      "It is camera-agnostic (my own examples are shot on Sony A7R V and A7 III), subtitled in English and Persian, with Persian voice-over on selected modules. Cohort dates are announced to the waitlist first; waitlist members receive founder pricing, lifetime access and a private Q&A call."
+      "Every week a videographer asks me the same question: *how do you make clinics look like that?* The honest answer is a method, not a camera. The **Film Academy for the Beauty Business** is that method — six modules covering everything from how to enter the niche to how to turn one shoot into a monthly retainer."
     ],
     "modulesTitle": "Six modules. One craft. Taught honestly.",
     "modules": [
@@ -564,8 +564,7 @@
     ],
     "operatorTitle": "Taught by an operator, not a guru",
     "operator": [
-      "I am Shahab Balamchi — a commercial cinematographer in Toronto and the founder of Divan Group. For seven years I have filmed the clinics, med spas and aesthetic practices that shape how the beauty business is seen: more than forty of them, over five thousand hours behind the lens, across Canada, the United States, Spain and the UAE.",
-      "The Academy teaches exactly what I do on set this week — nothing theoretical, nothing I have not sold. Graduates in other cities also become the local crew for Film Week, so the course is a door into real work, not just a certificate."
+      "I am Shahab Balamchi — a commercial cinematographer in Toronto and the founder of Divan Group. For seven years I have filmed the clinics, med spas and aesthetic practices that shape how the beauty business is seen: more than forty of them, over five thousand hours behind the lens, across Canada, the United States, Spain and the UAE."
     ],
     "btsTitle": "Behind the scenes",
     "waitlistTitle": "Join the waitlist",
@@ -754,5 +753,23 @@
     "proofLabel": "On set",
     "proofTitle": "Inside the room, not outside it.",
     "proofText": "Every film is shot on location in a working practice — lit for skin, around the treatment, with the team still working."
+  },
+  "blog": {
+    "title": "Journal — Clinic Film, Craft and the Business of Looking Good | Cinematic Clinic",
+    "metaDesc": "Notes from inside beauty and health clinics: how clinic films get made, what works on camera, consent, lighting skin, and what clinic owners actually ask.",
+    "eyebrow": "Journal",
+    "h1": "Notes from inside the room",
+    "lead": "How these films get made, what works on camera, and the questions clinic owners ask before they book.",
+    "empty": "The first pieces are being written. In the meantime, the films are the argument.",
+    "readMore": "Read",
+    "backToBlog": "All notes",
+    "published": "Published",
+    "updated": "Updated",
+    "author": "Shahab Balamchi",
+    "cta": {
+      "title": "Your clinic is built. Now it needs a film.",
+      "text": "One message is enough to start.",
+      "button": "Work with me"
+    }
   }
 }
