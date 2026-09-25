@@ -721,6 +721,9 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
+# internal working tool, not part of the site
+Disallow: /sorter-f7k29p.html
+
 Sitemap: ${SITE}/sitemap.xml
 `);
 
