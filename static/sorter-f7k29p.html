@@ -55,6 +55,10 @@
     position:absolute; inset:0; display:grid; place-items:center; text-align:center;
     padding:12px; font-size:.8rem; color:var(--bone-3); background:var(--ink-3);
   }
+  /* `display:grid` above beats the browser's own [hidden]{display:none}, so the
+     placeholder sat on top of every thumbnail even when the image loaded fine.
+     This line is what actually makes `hidden` hide it. */
+  .thumb .fallback[hidden]{ display:none }
   .play{
     position:absolute; inset:0; margin:auto; width:44px; height:44px; border-radius:50%;
     background:rgba(11,11,13,.62); border:1px solid rgba(242,239,233,.55);
