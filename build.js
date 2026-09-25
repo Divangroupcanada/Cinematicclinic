@@ -13,17 +13,31 @@ const LANGS = { en: require('./content/en.json'), fa: require('./content/fa.json
 const PAGES = ['home', 'work', 'clinic-film', 'doctor-series', 'film-week', 'academy', 'about', 'blog', 'consent', 'privacy', 'contact'];
 const YT_IMG = (id, q) => `https://i.ytimg.com/vi/${id}/${q || 'hqdefault'}.jpg`;
 const HERO_ID = 'OsLZLrxW6UQ';
-// The band is the horizontal counterpart — the hero film is vertical (9:16),
-// so using it there would pillarbox. Picked from videos.json orient === 'h'.
-const BAND_ID = 'v2FsTXiBH4U';
+// The band is the horizontal counterpart. Both are `place: "hero"` in
+// videos.json — Shahab picked two, the first leads the page and the second
+// carries the full-bleed band. Neither is repeated in the rails below.
+const BAND_ID = '4loMtoN4tjE';
 
-// Curation lives in one place: `star` on a videos.json entry is a rank, lower is
-// better, and a starred film leads wherever films are listed — the 9:16 strip on
-// the home page, and both halves of /work/. Films with no star keep catalogue
-// order behind the starred ones, which is exactly what shipped before this
-// existed, so an empty curation changes nothing.
+// Curation is two fields on a videos.json entry, both set by hand in the film
+// sorter (static/sorter-f7k29p.html):
+//
+//   place  hero | home | page | archive | hidden  — where a film is allowed to
+//          appear. `hidden` never ships; `archive` only reaches /work/.
+//   tags   cinematic, branding, informative, procedure, testimonial, bts —
+//          what the film IS. Tags combine; a film can be cinematic + branding
+//          + procedure at once.
+//
+// `star` (view rank, lower is better) still orders films WITHIN a placement, so
+// the best-watched film of a tier leads it. Place decides the tier, star the row.
+const PLACE_RANK = { hero: 0, home: 1, page: 2, archive: 3, hidden: 9 };
+const PLACE = (v) => (PLACE_RANK[v.place] === undefined ? 2 : PLACE_RANK[v.place]);
 const STAR = (v) => (typeof v.star === 'number' ? v.star : 1e9);
 const byStar = (a, b) => STAR(a) - STAR(b);
+const byRank = (a, b) => PLACE(a) - PLACE(b) || STAR(a) - STAR(b);
+const TAGGED = (v, tag) => (v.tags || []).includes(tag);
+// Everything the site is allowed to show. Nothing outside this list is ever
+// rendered, counted, put in a schema or written to llms.txt.
+const live = videos.filter((v) => v.place !== 'hidden');
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
@@ -243,11 +257,16 @@ const film = (lang, v, cls, big) => {
 // Film blocks, shared by every page. `pick` returns films ranked best-first
 // (see `star`), optionally narrowed to categories or one orientation and capped.
 // Every page that shows work uses these, so a page never invents its own layout.
-const pick = ({ cat, orient, n, exclude } = {}) => {
+const pick = ({ cat, tag, place, orient, n, exclude, maxPlace = 'page' } = {}) => {
   const cats = cat ? (Array.isArray(cat) ? cat : [cat]) : null;
   const skip = new Set(exclude || []);
-  let list = [...videos].sort(byStar).filter((v) => !skip.has(v.id));
+  const cap = PLACE_RANK[maxPlace];
+  let list = [...live].sort(byRank).filter((v) => !skip.has(v.id));
+  // `place` pins one tier exactly; otherwise everything up to maxPlace is fair
+  // game and byRank keeps the home picks in front of the page ones.
+  list = place ? list.filter((v) => v.place === place) : list.filter((v) => PLACE(v) <= cap);
   if (cats) list = list.filter((v) => cats.includes(v.cat));
+  if (tag) list = list.filter((v) => TAGGED(v, tag));
   if (orient) list = list.filter((v) => (orient === 'h' ? v.orient === 'h' : v.orient !== 'h'));
   return n ? list.slice(0, n) : list;
 };
@@ -316,7 +335,7 @@ function filmBand(lang, h) {
 
 function verticalFromCatalogue(lang, h) {
   const c = LANGS[lang];
-  const picks = videos.filter((v) => v.orient === 'v').sort(byStar).slice(0, 4);
+  const picks = pick({ orient: 'v', n: 4 });
   if (!picks.length) return '';
   const cards = picks.map((v, i) => {
     const t = lang === 'fa' ? v.title_fa : v.title;
@@ -373,8 +392,10 @@ R.home = (lang) => {
   // way. Everything that used to be a paragraph here — the manifesto, the
   // positioning essay, the process steps, the FAQ — belongs on the service pages
   // and the blog, where a reader who wants it goes looking for it.
-  const wide = pick({ orient: 'h', n: 6, exclude: [HERO_ID, BAND_ID] });
-  const tall = pick({ orient: 'v', n: 14 });
+  // Both rails are exactly what Shahab marked HOME in the sorter — 8 wide and
+  // 30 tall — not a slice of the catalogue. No cap: the count is the curation.
+  const wide = pick({ place: 'home', orient: 'h', exclude: [HERO_ID, BAND_ID] });
+  const tall = pick({ place: 'home', orient: 'v', exclude: [HERO_ID, BAND_ID] });
   const body = `
 <section class="hero">
   <div class="hero-media"${mediaAttr} style="background-image:url('${hasMp4 ? '/assets/hero-poster.jpg' : YT_IMG(HERO_ID, 'maxresdefault')}')">${media}</div>
@@ -425,8 +446,10 @@ ${cta(lang, h.cta)}`;
 R.work = (lang) => {
   const c = LANGS[lang], w = c.work;
   const catsOrder = ['Brand Film', 'Practitioner', 'Injectables', 'Facial', 'Laser', 'Head Spa', 'Brows', 'Training', 'Behind the Scenes'];
-  const catLabel = (cat) => (lang === 'fa' ? videos.find((v) => v.cat === cat).cat_fa : cat);
-  const sorted = [...videos].sort((a, b) => byStar(a, b) || catsOrder.indexOf(a.cat) - catsOrder.indexOf(b.cat));
+  const catLabel = (cat) => (lang === 'fa' ? (live.find((v) => v.cat === cat) || videos.find((v) => v.cat === cat)).cat_fa : cat);
+  // /work/ is the whole live catalogue: home picks first, then page, then the
+  // archive, each tier ordered by views. Hidden films are already gone.
+  const sorted = [...live].sort((a, b) => byRank(a, b) || catsOrder.indexOf(a.cat) - catsOrder.indexOf(b.cat));
   // Horizontal films run full width; everything portrait or square goes in the
   // carousel, where a fixed card height lets 9:16 and 1:1 sit together.
   const wide = sorted.filter((v) => v.orient === 'h');
@@ -434,7 +457,7 @@ R.work = (lang) => {
   const body = `
 <section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(w.eyebrow)}</span><h1>${esc(w.h1)}</h1><p class="lead">${md(w.lead)}</p></div></section>
 <section class="section"><div class="wrap">
-  <div class="filters reveal" role="toolbar" aria-label="${esc(w.filterLabel)}"><button class="chip is-on" data-filter="all" aria-pressed="true">${esc(w.all)} <span dir="ltr">(${videos.length})</span></button>${catsOrder.map((cat) => `<button class="chip" data-filter="${esc(cat)}" aria-pressed="false">${esc(catLabel(cat))} <span dir="ltr">(${videos.filter((v) => v.cat === cat).length})</span></button>`).join('')}</div>
+  <div class="filters reveal" role="toolbar" aria-label="${esc(w.filterLabel)}"><button class="chip is-on" data-filter="all" aria-pressed="true">${esc(w.all)} <span dir="ltr">(${live.length})</span></button>${catsOrder.filter((cat) => live.some((v) => v.cat === cat)).map((cat) => `<button class="chip" data-filter="${esc(cat)}" aria-pressed="false">${esc(catLabel(cat))} <span dir="ltr">(${live.filter((v) => v.cat === cat).length})</span></button>`).join('')}</div>
   <div class="section-head reveal" style="margin-top:clamp(40px,5vw,72px)"><div><span class="label ox">${esc(w.wideTitle)}</span><h2 style="margin-top:14px" dir="ltr">16:9</h2></div><p class="lead" style="margin:0">${md(w.wideLead)}</p></div>
   <div class="reel-stack" id="films">${wide.map((v) => film(lang, v, 'reel-item reveal', true)).join('')}</div>
   <p class="note reveal">${md(w.note)}</p>
@@ -450,7 +473,7 @@ R.work = (lang) => {
   </div>
 </section>
 ${cta(lang, w.cta)}`;
-  const itemList = { '@context': 'https://schema.org', '@type': 'ItemList', name: w.h1, numberOfItems: videos.length, itemListElement: sorted.map((v, i) => ({ '@type': 'ListItem', position: i + 1, item: videoSchema(lang, v) })) };
+  const itemList = { '@context': 'https://schema.org', '@type': 'ItemList', name: w.h1, numberOfItems: live.length, itemListElement: sorted.map((v, i) => ({ '@type': 'ListItem', position: i + 1, item: videoSchema(lang, v) })) };
   return { title: w.title, desc: w.metaDesc, body, schema: [orgSchema(lang), itemList, breadcrumb(lang, 'work', c.nav.work)] };
 };
 
@@ -494,8 +517,13 @@ R['film-week'] = (lang) => {
 
 R.academy = (lang) => {
   const c = LANGS[lang], a = c.academy;
-  const btsWide = pick({ cat: 'Behind the Scenes', orient: 'h', n: 3 });
-  const btsTall = pick({ cat: 'Behind the Scenes', orient: 'v', n: 14 });
+  // Behind-the-scenes is a tag now, not only a category: a set-life clip shot on
+  // an injectables day is still BTS. Archive is allowed here — that is where the
+  // sorter left them.
+  const isBts = (v) => TAGGED(v, 'bts') || v.cat === 'Behind the Scenes';
+  const bts = live.filter(isBts).sort(byRank);
+  const btsWide = bts.filter((v) => v.orient === 'h').slice(0, 3);
+  const btsTall = bts.filter((v) => v.orient !== 'h').slice(0, 20);
   const body = `
 <section class="page-head"><div class="wrap reveal in"><span class="label ox">${esc(a.eyebrow)}</span><h1>${md(a.h1)}</h1><p class="lead">${md(a.lead)}</p><p class="cta-row"><a class="btn" href="#waitlist">${esc(a.cta1)}</a><a class="btn btn-ghost" href="#modules">${esc(a.cta2)}</a></p></div></section>
 <section class="section"><div class="wrap narrow reveal">${paras(a.intro)}</div></section>
@@ -601,7 +629,7 @@ function postPage(lang, p) {
 </div></section>
 ${still ? `<section class="section">${still}</section>` : ''}
 <article class="section post-body">${(b.body || []).map((sec) => `<div class="wrap narrow reveal">${sec.h ? `<h2>${esc(sec.h)}</h2>` : ''}${sec.p ? paras(sec.p) : ''}${sec.list ? list(sec.list) : ''}</div>`).join('')}</article>
-${p.films && p.films.length ? `<section class="section rule"><div class="wrap">${filmHead(c.home.bandEyebrow, c.home.selectedTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(c.home.filmsAll)}</a>`)}${wideStack(lang, videos.filter((v) => p.films.includes(v.id)))}</div></section>` : ''}
+${p.films && p.films.length ? `<section class="section rule"><div class="wrap">${filmHead(c.home.bandEyebrow, c.home.selectedTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(c.home.filmsAll)}</a>`)}${wideStack(lang, live.filter((v) => p.films.includes(v.id)))}</div></section>` : ''}
 ${b.faq && b.faq.length ? faqBlock(lang, c.clinicFilm.faqTitle, b.faq) : ''}
 ${cta(lang, g.cta)}`;
   const article = {
@@ -767,6 +795,6 @@ write('llms-full.txt', `# Cinematic Clinic — full text (English)\n\nSource: ${
   `# ${strip(en.academy.h1)}\n\n${strip(en.academy.lead)}\n\n${en.academy.intro.map(strip).join('\n\n')}\n\n## Modules\n\n${en.academy.modules.map((m) => `${m.n}. ${m.t} — ${m.d} (${m.len})`).join('\n')}\n\n## FAQ\n\n${en.academy.faq.map((f) => `**${f.q}**\n${strip(Array.isArray(f.a) ? f.a.join(' ') : f.a)}`).join('\n\n')}\n\n` +
   `# ${strip(en.about.h1)}\n\n${strip(en.about.statement)}\n\n${en.about.bio.map(strip).join('\n\n')}\n\n${en.about.facts.map((f) => `- ${f.k}: ${strip(f.v)}`).join('\n')}\n\n${en.about.divan.map(strip).join('\n\n')}\n\n` +
   `# ${strip(en.consent.h1)}\n\n${en.consent.intro.map(strip).join('\n\n')}\n\n${en.consent.sections.map((s) => `## ${s.t}\n\n${(s.p || []).map(strip).join('\n\n')}${s.list ? '\n' + s.list.map((i) => '- ' + strip(i)).join('\n') : ''}`).join('\n\n')}\n\n` +
-  `# Films\n\n${videos.map((v) => `- ${v.title} (${v.cat}) — https://www.youtube.com/watch?v=${v.id}`).join('\n')}\n`);
+  `# Films\n\n${live.map((v) => `- ${v.title} (${v.cat}) — https://www.youtube.com/watch?v=${v.id}`).join('\n')}\n`);
 
 console.log('Built', urls.length, 'pages →', OUT);
