@@ -10,8 +10,9 @@
     --ink:#0B0B0D; --ink-2:#141417; --ink-3:#1c1c21;
     --bone:#F2EFE9; --bone-2:#B5B1AA; --bone-3:#77736D;
     --ox:#C86A78; --line:rgba(242,239,233,.12);
-    --cin:#C86A78; --info:#6C9BD1; --proc:#63B39A; --res:#D6A756;
-    --test:#A98BD0; --bts:#8A8F98; --soc:#D98B5F; --hide:#5A5A62;
+    --cin:#C86A78; --brand:#E0899A; --info:#6C9BD1; --proc:#63B39A;
+    --res:#D6A756; --test:#A98BD0; --bts:#8A8F98; --soc:#D98B5F;
+    --hero:#F2EFE9; --home:#7FD1B9; --page:#8FB4E8; --arch:#6E6A66; --hide:#4A4A52;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -20,130 +21,88 @@
     font:400 15px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  a{color:inherit}
   header{
-    position:sticky; top:0; z-index:20; background:rgba(11,11,13,.96);
-    backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
-    padding:14px 20px 12px;
+    position:sticky; top:0; z-index:20; background:rgba(11,11,13,.97);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line); padding:13px 20px 11px;
   }
-  .hrow{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:12px}
+  .hrow{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:9px}
   h1{font-size:1.05rem; margin:0; letter-spacing:.02em}
-  .sub{color:var(--bone-3); font-size:.82rem}
-  .prog{margin-inline-start:auto; font-variant-numeric:tabular-nums; font-size:.85rem; color:var(--bone-2)}
-  .bar{height:3px; background:var(--ink-3); border-radius:2px; overflow:hidden; margin-top:6px}
+  .sub{color:var(--bone-3); font-size:.8rem}
+  .tally{margin-inline-start:auto; display:flex; gap:14px; flex-wrap:wrap; font-size:.82rem; color:var(--bone-2); font-variant-numeric:tabular-nums}
+  .tally b{color:var(--bone)}
+  .bar{height:3px; background:var(--ink-3); border-radius:2px; overflow:hidden}
   .bar i{display:block; height:100%; background:var(--ox); width:0; transition:width .3s}
-  .controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px}
   select,input[type=search],button{
     font:inherit; font-size:.85rem; color:var(--bone); background:var(--ink-3);
     border:1px solid var(--line); border-radius:8px; padding:7px 11px; cursor:pointer;
   }
-  input[type=search]{cursor:text; min-width:180px}
+  input[type=search]{cursor:text; min-width:170px}
   button:hover,select:hover{border-color:rgba(242,239,233,.3)}
   .btn-go{background:var(--bone); color:var(--ink); border-color:var(--bone); font-weight:600}
   .btn-go:hover{opacity:.88}
-  main{padding:18px 20px 120px; max-width:1500px; margin:0 auto}
-  .grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr))}
-  .card{
-    background:var(--ink-2); border:1px solid var(--line); border-radius:12px;
-    overflow:hidden; display:flex; flex-direction:column; scroll-margin:120px;
-  }
-  .card.sel{border-color:var(--bone); box-shadow:0 0 0 2px rgba(242,239,233,.25)}
-  .card.done{border-inline-start:3px solid var(--tagcol,var(--bone-3))}
+  .legend{display:flex; gap:11px; flex-wrap:wrap; font-size:.73rem; color:var(--bone-3); margin-top:9px}
+  .legend span{display:flex; align-items:center; gap:5px}
+  .dot{width:9px; height:9px; border-radius:3px; display:inline-block}
+  main{padding:18px 20px 130px; max-width:1560px; margin:0 auto}
+  .grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+  .card{background:var(--ink-2); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; scroll-margin:130px}
+  .card.sel{border-color:var(--bone); box-shadow:0 0 0 2px rgba(242,239,233,.22)}
+  .card.done{border-inline-start:3px solid var(--edge,var(--bone-3))}
   .thumb{position:relative; aspect-ratio:16/9; background:#000; display:block; cursor:pointer; overflow:hidden}
   .thumb img{width:100%; height:100%; object-fit:cover; display:block}
-  .thumb .fallback{
-    position:absolute; inset:0; display:grid; place-items:center; text-align:center;
-    padding:12px; font-size:.8rem; color:var(--bone-3); background:var(--ink-3);
-  }
-  /* `display:grid` above beats the browser's own [hidden]{display:none}, so the
-     placeholder sat on top of every thumbnail even when the image loaded fine.
-     This line is what actually makes `hidden` hide it. */
-  .thumb .fallback[hidden]{ display:none }
-  .play{
-    position:absolute; inset:0; margin:auto; width:44px; height:44px; border-radius:50%;
-    background:rgba(11,11,13,.62); border:1px solid rgba(242,239,233,.55);
-    display:grid; place-items:center; pointer-events:none; transition:transform .2s, background .2s;
-  }
+  .thumb .fallback{position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:12px; font-size:.8rem; color:var(--bone-3); background:var(--ink-3)}
+  /* display:grid above beats the browser's own [hidden]{display:none}; without this
+     the placeholder sits on top of every thumbnail even when the image loaded. */
+  .thumb .fallback[hidden]{display:none}
+  .play{position:absolute; inset:0; margin:auto; width:42px; height:42px; border-radius:50%;
+    background:rgba(11,11,13,.62); border:1px solid rgba(242,239,233,.55); display:grid; place-items:center;
+    pointer-events:none; transition:transform .2s, background .2s}
   .play::after{content:""; border-style:solid; border-width:7px 0 7px 11px; border-color:transparent transparent transparent var(--bone); margin-inline-start:3px}
-  .thumb:hover .play{transform:scale(1.12); background:rgba(11,11,13,.8)}
-
-  /* Tag straight off the picture — the fastest path when the frame alone tells you
-     what the film is. Always visible on touch, on hover everywhere else. */
-  .quick{
-    position:absolute; left:0; right:0; bottom:0; display:flex; gap:3px; padding:6px;
-    background:linear-gradient(to top,rgba(11,11,13,.92),rgba(11,11,13,0));
-    opacity:0; transition:opacity .18s; justify-content:center; flex-wrap:wrap;
-  }
+  .thumb:hover .play{transform:scale(1.12); background:rgba(11,11,13,.82)}
+  .badge{position:absolute; top:8px; inset-inline-start:8px; font-size:.64rem; letter-spacing:.1em; text-transform:uppercase;
+    background:rgba(11,11,13,.8); border:1px solid var(--line); padding:3px 7px; border-radius:5px; color:var(--bone-2)}
+  .placeflag{position:absolute; top:8px; inset-inline-end:8px; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase;
+    padding:3px 8px; border-radius:5px; color:#0B0B0D; font-weight:700}
+  .quick{position:absolute; left:0; right:0; bottom:0; display:flex; gap:3px; padding:6px; justify-content:center; flex-wrap:wrap;
+    background:linear-gradient(to top,rgba(11,11,13,.93),rgba(11,11,13,0)); opacity:0; transition:opacity .18s}
   .thumb:hover .quick, .card.sel .quick{opacity:1}
   @media (hover:none){ .quick{opacity:1} }
-  .qc{
-    width:25px; height:25px; border-radius:6px; border:1px solid rgba(242,239,233,.35);
-    background:rgba(11,11,13,.75); color:var(--bone); font:600 11px/1 inherit;
-    display:grid; place-items:center; cursor:pointer; padding:0;
-  }
+  .qc{width:25px; height:25px; border-radius:6px; border:1px solid rgba(242,239,233,.35); background:rgba(11,11,13,.75);
+    color:var(--bone); font:600 11px/1 inherit; display:grid; place-items:center; cursor:pointer; padding:0}
   .qc:hover{transform:translateY(-2px)}
   .qc.on{background:var(--pc); border-color:var(--pc); color:#0B0B0D}
-  .qc.qstar.on{background:var(--bone); border-color:var(--bone); color:var(--ink)}
-
-  /* Review mode — one film at a time, large, tag and it jumps to the next. */
-  #review{padding:0; max-width:min(1100px,94vw); width:auto; border-radius:16px; overflow:hidden}
-  #review .rv-player{aspect-ratio:16/9; background:#000; width:min(1100px,94vw)}
+  .body{padding:11px 12px 12px; display:flex; flex-direction:column; gap:9px; flex:1}
+  .ttl{font-size:.92rem; line-height:1.3}
+  .meta{font-size:.72rem; color:var(--bone-3); letter-spacing:.04em}
+  .row{display:flex; flex-wrap:wrap; gap:5px}
+  .rowlab{font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--bone-3); width:100%; margin-bottom:-2px}
+  .pill{font-size:.67rem; letter-spacing:.05em; padding:5px 8px; border-radius:6px; border:1px solid var(--line); background:transparent; color:var(--bone-2)}
+  .pill:hover{border-color:var(--bone-3); color:var(--bone)}
+  .pill.on{background:var(--pc); border-color:var(--pc); color:#0B0B0D; font-weight:700}
+  .places{margin-top:auto; padding-top:2px; border-top:1px solid var(--line)}
+  .empty{padding:60px 0; text-align:center; color:var(--bone-3)}
+  footer{position:fixed; bottom:0; left:0; right:0; z-index:20; background:rgba(11,11,13,.97); backdrop-filter:blur(10px);
+    border-top:1px solid var(--line); padding:11px 20px; display:flex; gap:9px; flex-wrap:wrap; align-items:center; font-size:.8rem; color:var(--bone-3)}
+  footer .right{margin-inline-start:auto; display:flex; gap:9px; flex-wrap:wrap}
+  kbd{background:var(--ink-3); border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:1px 5px; font:inherit; font-size:.72rem; color:var(--bone-2)}
+  dialog{background:var(--ink-2); color:var(--bone); border:1px solid var(--line); border-radius:14px; padding:22px; max-width:660px; width:calc(100% - 40px)}
+  dialog::backdrop{background:rgba(0,0,0,.74)}
+  dialog h2{margin:0 0 5px; font-size:1rem}
+  dialog p{color:var(--bone-2); font-size:.86rem; margin:0 0 13px}
+  textarea{width:100%; height:240px; background:var(--ink); color:var(--bone); font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+    border:1px solid var(--line); border-radius:8px; padding:11px; resize:vertical}
+  #review{padding:0; max-width:min(1060px,94vw); width:auto; border-radius:16px; overflow:hidden}
+  #review .rv-player{aspect-ratio:16/9; background:#000; width:min(1060px,94vw)}
   #review iframe{width:100%; height:100%; border:0; display:block}
-  #review .rv-bar{padding:14px 18px 16px; display:flex; flex-direction:column; gap:11px}
+  #review .rv-bar{padding:13px 18px 16px; display:flex; flex-direction:column; gap:10px}
   #review .rv-top{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
   #review .rv-t{font-size:1.05rem}
   #review .rv-m{font-size:.78rem; color:var(--bone-3)}
   #review .rv-pos{margin-inline-start:auto; font-size:.78rem; color:var(--bone-3); font-variant-numeric:tabular-nums}
-  #review .rv-tags{display:flex; gap:6px; flex-wrap:wrap}
-  #review .rv-tags .pill{font-size:.75rem; padding:8px 11px}
-  #review .rv-nav{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-  @media (max-width:640px){ #review .rv-bar{padding:12px 13px 14px} #review .rv-tags .pill{font-size:.7rem; padding:7px 9px} }
-  .badge{
-    position:absolute; top:8px; inset-inline-start:8px; font-size:.65rem; letter-spacing:.1em;
-    text-transform:uppercase; background:rgba(11,11,13,.8); border:1px solid var(--line);
-    padding:3px 7px; border-radius:5px; color:var(--bone-2);
-  }
-  .body{padding:11px 12px 12px; display:flex; flex-direction:column; gap:9px; flex:1}
-  .ttl{font-size:.92rem; line-height:1.3}
-  .meta{font-size:.73rem; color:var(--bone-3); letter-spacing:.04em}
-  .pills{display:flex; flex-wrap:wrap; gap:5px; margin-top:auto}
-  .pill{
-    font-size:.68rem; letter-spacing:.06em; padding:5px 8px; border-radius:6px;
-    border:1px solid var(--line); background:transparent; color:var(--bone-2);
-  }
-  .pill:hover{border-color:var(--bone-3); color:var(--bone)}
-  .pill.on{background:var(--pc); border-color:var(--pc); color:#0B0B0D; font-weight:700}
-  .star{margin-inline-start:auto; font-size:.8rem; padding:5px 9px}
-  .star.on{background:var(--bone); border-color:var(--bone); color:var(--ink); font-weight:700}
-  .empty{padding:60px 0; text-align:center; color:var(--bone-3)}
-  footer{
-    position:fixed; bottom:0; left:0; right:0; z-index:20; background:rgba(11,11,13,.96);
-    backdrop-filter:blur(10px); border-top:1px solid var(--line); padding:11px 20px;
-    display:flex; gap:9px; flex-wrap:wrap; align-items:center; font-size:.8rem; color:var(--bone-3);
-  }
-  footer .right{margin-inline-start:auto; display:flex; gap:9px; flex-wrap:wrap}
-  kbd{
-    background:var(--ink-3); border:1px solid var(--line); border-bottom-width:2px;
-    border-radius:4px; padding:1px 5px; font:inherit; font-size:.72rem; color:var(--bone-2);
-  }
-  dialog{
-    background:var(--ink-2); color:var(--bone); border:1px solid var(--line);
-    border-radius:14px; padding:22px; max-width:640px; width:calc(100% - 40px);
-  }
-  dialog::backdrop{background:rgba(0,0,0,.72)}
-  dialog h2{margin:0 0 4px; font-size:1rem}
-  dialog p{color:var(--bone-2); font-size:.86rem; margin:0 0 14px}
-  textarea{
-    width:100%; height:230px; background:var(--ink); color:var(--bone); font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
-    border:1px solid var(--line); border-radius:8px; padding:11px; resize:vertical;
-  }
-  .legend{display:flex; gap:12px; flex-wrap:wrap; font-size:.74rem; color:var(--bone-3); margin-top:10px}
-  .legend span{display:flex; align-items:center; gap:5px}
-  .dot{width:9px; height:9px; border-radius:3px; display:inline-block}
-  @media (max-width:640px){
-    header{padding:12px 14px 10px} main{padding:14px 14px 150px}
-    .prog{margin-inline-start:0; width:100%}
-  }
+  #review .pill{font-size:.75rem; padding:8px 11px}
+  #review .rv-nav{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:2px}
+  @media (max-width:640px){ header{padding:11px 14px 9px} main{padding:14px 14px 160px} .tally{margin-inline-start:0; width:100%} }
 </style>
 </head>
 <body>
@@ -151,24 +110,27 @@
 <header>
   <div class="hrow">
     <h1>Film Sorter</h1>
-    <span class="sub">217 films · hover a thumbnail to tag it · hit play to watch it here</span>
-    <span class="prog"><b id="done">0</b> / 217 sorted · <b id="feat">0</b> featured</span>
+    <span class="sub">217 films · a film can carry several tags · placement decides where it appears</span>
+    <span class="tally">
+      <span><b id="nDone">0</b>/217 tagged</span>
+      <span style="color:var(--hero)">★ Hero <b id="nHero">0</b></span>
+      <span style="color:var(--home)">Home <b id="nHome">0</b></span>
+      <span style="color:var(--page)">Page <b id="nPage">0</b></span>
+      <span>Hidden <b id="nHide">0</b></span>
+    </span>
   </div>
   <div class="bar"><i id="barfill"></i></div>
-  <div class="controls" style="margin-top:11px">
+  <div class="controls">
     <select id="fStatus">
       <option value="all">All films</option>
-      <option value="todo">Not sorted yet</option>
-      <option value="done">Sorted</option>
-      <option value="star">Featured only</option>
+      <option value="todo">Not tagged yet</option>
+      <option value="done">Tagged</option>
+      <option value="noplace">Tagged, no placement</option>
     </select>
-    <select id="fOrient">
-      <option value="all">Any shape</option>
-      <option value="h">Horizontal 16:9</option>
-      <option value="v">Vertical 9:16</option>
-    </select>
+    <select id="fOrient"><option value="all">Any shape</option><option value="h">Horizontal 16:9</option><option value="v">Vertical 9:16</option></select>
     <select id="fCat"><option value="all">Any current category</option></select>
-    <select id="fTag"><option value="all">Any new tag</option></select>
+    <select id="fTag"><option value="all">Any tag</option></select>
+    <select id="fPlace"><option value="all">Any placement</option></select>
     <input type="search" id="q" placeholder="Search title or clinic…">
     <button id="reset">Clear filters</button>
   </div>
@@ -183,8 +145,9 @@
 <footer>
   <span>Saved in this browser automatically.</span>
   <span class="right">
+    <button id="suggest">Suggest best for home</button>
     <button id="help">Keyboard</button>
-    <button id="clear">Reset all tags</button>
+    <button id="clear">Reset everything</button>
     <button class="btn-go" id="export">Send results to Claude</button>
   </span>
 </footer>
@@ -192,12 +155,11 @@
 <dialog id="review">
   <div class="rv-player" id="rvPlayer"></div>
   <div class="rv-bar">
-    <div class="rv-top">
-      <span class="rv-t" id="rvT"></span>
-      <span class="rv-m" id="rvM"></span>
-      <span class="rv-pos" id="rvPos"></span>
-    </div>
-    <div class="rv-tags" id="rvTags"></div>
+    <div class="rv-top"><span class="rv-t" id="rvT"></span><span class="rv-m" id="rvM"></span><span class="rv-pos" id="rvPos"></span></div>
+    <div class="rowlab">What it is — pick any that apply</div>
+    <div class="row" id="rvTags"></div>
+    <div class="rowlab">Where it goes — pick one</div>
+    <div class="row" id="rvPlaces"></div>
     <div class="rv-nav">
       <button id="rvPrev">← Back</button>
       <button id="rvNext">Skip →</button>
@@ -209,7 +171,7 @@
 
 <dialog id="dlgExport">
   <h2>Copy this and paste it to Claude</h2>
-  <p>Everything you tagged, as one block. Paste it into the chat and I'll wire it into the site.</p>
+  <p>Your tags and placements, as one block. Paste it into the chat and I'll wire it into the site.</p>
   <textarea id="out" readonly></textarea>
   <div style="display:flex; gap:9px; margin-top:12px; flex-wrap:wrap">
     <button class="btn-go" id="copy">Copy to clipboard</button>
@@ -219,169 +181,193 @@
 </dialog>
 
 <dialog id="dlgHelp">
-  <h2>Faster with the keyboard</h2>
-  <p>Click any card once to select it, then:</p>
+  <h2>Two questions per film</h2>
+  <p><b style="color:var(--bone)">What it is</b> — tags, and a film can carry several. A brand film shot cinematically is <i>Cinematic + Branding</i>. A treatment explained on camera is <i>Informative + Procedure</i>. A plain procedure shot with no styling is just <i>Procedure</i>.</p>
+  <p><b style="color:var(--bone)">Where it goes</b> — one choice only:</p>
   <p style="color:var(--bone)">
-    <kbd>1</kbd>–<kbd>8</kbd> file it under that tag &nbsp;·&nbsp;
-    <kbd>F</kbd> mark as featured &nbsp;·&nbsp;
-    <kbd>0</kbd> clear the tag<br><br>
-    <kbd>J</kbd> / <kbd>↓</kbd> next film &nbsp;·&nbsp;
-    <kbd>K</kbd> / <kbd>↑</kbd> previous film &nbsp;·&nbsp;
-    <kbd>Space</kbd> play it big
+    <b>Hero</b> — the one film behind the homepage headline. Pick one.<br>
+    <b>Home</b> — shown on the home page. Six horizontal and about fourteen vertical is the right number.<br>
+    <b>Page</b> — shown on the service page its tags point to.<br>
+    <b>Archive</b> — stays on the Films page only. This is the default and it's fine for most.<br>
+    <b>Hidden</b> — kept off the site entirely.
   </p>
-  <p style="color:var(--bone-2)">Two ways to work, both fast:</p>
   <p style="color:var(--bone)">
-    <b>Straight off the picture</b> — hover any thumbnail and eight numbered chips appear over it. One click files the film. No playback, no new tab.<br><br>
-    <b>Review mode</b> — click the play button. The film plays right here at full size, and the moment you tag it the next one loads by itself. <kbd>1</kbd>–<kbd>8</kbd> to tag, <kbd>→</kbd> to skip.
+    <kbd>1</kbd>–<kbd>8</kbd> toggle a tag &nbsp;·&nbsp;
+    <kbd>H</kbd> hero &nbsp; <kbd>M</kbd> home &nbsp; <kbd>P</kbd> page &nbsp; <kbd>A</kbd> archive &nbsp; <kbd>X</kbd> hide<br>
+    <kbd>J</kbd> <kbd>K</kbd> move &nbsp;·&nbsp; <kbd>Space</kbd> play it big &nbsp;·&nbsp; <kbd>0</kbd> clear this film
   </p>
-  <p style="margin-top:6px">Set the filter to <b>Not sorted yet</b> first — each film you tag drops out, so the list only shrinks.</p>
+  <p>Setting a placement in review mode moves you to the next film — so tag first, then place, and it flows.</p>
   <button class="btn-go" id="closeHelp">Got it</button>
 </dialog>
 
 <script>
 const TAGS = [
-  {k:'cinematic',   n:'Cinematic',  s:'CINEMATIC', c:'var(--cin)',  d:'Brand and mood films. The ones that sell the craft.'},
-  {k:'informative', n:'Informative',s:'INFO',      c:'var(--info)', d:'Explainers. Someone teaching on camera.'},
-  {k:'procedure',   n:'Procedure',  s:'PROCEDURE', c:'var(--proc)', d:'The treatment itself, step by step.'},
-  {k:'result',      n:'Result',     s:'RESULT',    c:'var(--res)',  d:'Before and after. The transformation.'},
-  {k:'testimonial', n:'Testimonial',s:'TESTIMONIAL',c:'var(--test)',d:'A patient or owner talking about their experience.'},
-  {k:'bts',         n:'Behind the scenes', s:'BTS', c:'var(--bts)', d:'How it was made.'},
-  {k:'social',      n:'Social',     s:'SOCIAL',    c:'var(--soc)',  d:'Quick feed piece. Not portfolio grade.'},
-  {k:'hide',        n:'Hide',       s:'HIDE',      c:'var(--hide)', d:'Keep this one off the site entirely.'}
+  {k:'cinematic',  n:'Cinematic',  s:'CINEMATIC',  c:'var(--cin)',  d:'Shot and graded as a film. Mood, movement, craft.'},
+  {k:'branding',   n:'Branding',   s:'BRANDING',   c:'var(--brand)',d:'Sells the clinic itself — the room, the feeling, the name.'},
+  {k:'informative',n:'Informative',s:'INFORMATIVE',c:'var(--info)', d:'Someone explaining or teaching on camera.'},
+  {k:'procedure',  n:'Procedure',  s:'PROCEDURE',  c:'var(--proc)', d:'The treatment itself, step by step.'},
+  {k:'result',     n:'Result',     s:'RESULT',     c:'var(--res)',  d:'Before and after. The transformation.'},
+  {k:'testimonial',n:'Testimonial',s:'TESTIMONIAL',c:'var(--test)', d:'A patient or owner talking about their experience.'},
+  {k:'bts',        n:'Behind the scenes',s:'BTS',  c:'var(--bts)',  d:'How it was made.'},
+  {k:'social',     n:'Social',     s:'SOCIAL',     c:'var(--soc)',  d:'Quick feed piece. Not portfolio grade.'}
+];
+const PLACES = [
+  {k:'hero',   n:'Hero',    s:'HERO',    key:'H', c:'var(--hero)', d:'The one film behind the homepage headline'},
+  {k:'home',   n:'Home',    s:'HOME',    key:'M', c:'var(--home)', d:'On the home page'},
+  {k:'page',   n:'Page',    s:'PAGE',    key:'P', c:'var(--page)', d:'On the service page its tags point to'},
+  {k:'archive',n:'Archive', s:'ARCHIVE', key:'A', c:'var(--arch)', d:'Films page only — the default'},
+  {k:'hide',   n:'Hidden',  s:'HIDDEN',  key:'X', c:'var(--hide)', d:'Kept off the site entirely'}
 ];
 const FILMS = [{"i":"v2FsTXiBH4U","t":"Laser Hair Removal Treatment","v":"Toronto Med Spa","c":"Laser","o":"h","s":1},{"i":"LgZXxh9J50o","t":"Botox Consultation & Treatment","v":"Roda Clinic, Toronto","c":"Injectables","o":"h","s":2},{"i":"OsLZLrxW6UQ","t":"Clinic Brand Film — Spa Day","v":"Roda Clinic, Toronto","c":"Brand Film","o":"h","s":3},{"i":"Cr00TfT_CHI","t":"Salt Room & Wellness Film","v":"Unitix, Toronto","c":"Brand Film","o":"h","s":4},{"i":"ryjk_6oPGZg","t":"Microneedling Treatment","v":"Toronto Med Spa","c":"Facial","o":"h","s":5},{"i":"hVWzQd5HH0o","t":"Clinic Brand Film — Tennis","v":"Roda Clinic, Toronto","c":"Brand Film","o":"h","s":6},{"i":"Q5iOxmRb11M","t":"Beauty Portrait Film — Makeup & Lashes","v":"Divan Group","c":"Brows","o":"h","s":7},{"i":"MAvci_DnZrQ","t":"Filming in 4K at Roda Clinic","v":"","c":"Behind the Scenes","o":"h","s":8},{"i":"jE6zaomaVxE","t":"Skin Treatment Film","v":"Roda Clinic, Toronto","c":"Facial","o":"h","s":9},{"i":"drQemaxDmvE","t":"Cosmetic Clinic Tour","v":"Toronto","c":"Brand Film","o":"h","s":10},{"i":"JxnJFA3mXVQ","t":"Nail Artistry Training Course","v":"Toronto Beauty Academy","c":"Training","o":"h","s":11},{"i":"zBejVGG_mNw","t":"Salon Brand Film — Yalda Night","v":"Toronto Beauty Salon","c":"Brand Film","o":"h","s":12},{"i":"AzF8BactXII","t":"Cosmetic Injectables Treatment Film","v":"Toronto Clinic","c":"Injectables","o":"h","s":13},{"i":"4loMtoN4tjE","t":"Clinic Brand Film","v":"Hermanaz, Toronto","c":"Brand Film","o":"h","s":14},{"i":"kehfnetz7Cw","t":"LPG Endermologie Body & Face Treatment","v":"Toronto Med Spa","c":"Laser","o":"h","s":15},{"i":"xfXdui3zLS8","t":"Head Spa & Facial Treatment","v":"Mouna Medispa, Montréal","c":"Head Spa","o":"h","s":16},{"i":"6sQYaL0RkzI","t":"Hair Colour Showcase Film","v":"Divan Group","c":"Brand Film","o":"h","s":17},{"i":"-ab8yMiirl0","t":"Med Spa Brand Film — Treatment Room","v":"Toronto","c":"Brand Film","o":"h","s":18},{"i":"scft8sDfCv0","t":"Anti-Pigmentation Brightening Facial","v":"Toronto Beauty Centre","c":"Facial","o":"h","s":19},{"i":"Ss42dSvaeYU","t":"Liftosome Collagen Lifting Facial","v":"Toronto Beauty Centre","c":"Facial","o":"h","s":20},{"i":"dS0nWMIxlEk","t":"PhiContour Permanent Eyeliner","v":"Toronto Beauty Centre","c":"Brows","o":"h","s":21},{"i":"KsdKUPOifQU","t":"Clinic Interior & Atmosphere Film","v":"Toronto","c":"Brand Film","o":"h","s":22},{"i":"8KQpck0_JWA","t":"Dr Hossein Clinic Film (Arabic)","v":"","c":"Practitioner","o":"h","s":23},{"i":"QiJZfUB30r8","t":"PhiBrows Microblading Master Class","v":"Toronto","c":"Training","o":"h","s":24},{"i":"BHjNmSUK-do","t":"Med Spa Brand Film — Full Film","v":"Toronto","c":"Brand Film","o":"h","s":25},{"i":"8DzK5yY7Hg0","t":"Cosmetic Surgery Patient Journey","v":"Toronto Clinic","c":"Brand Film","o":"h","s":26},{"i":"PjOpV6qp8Pw","t":"Hair Lifestyle Film — Golden Hour","v":"Divan Group","c":"Brand Film","o":"h","s":27},{"i":"hDOzSU6tGRE","t":"Cosmetic Surgeon Brand Film","v":"Dubai","c":"Practitioner","o":"h","s":28},{"i":"YWF2hVaers0","t":"Nail Art Lifestyle Film","v":"Divan Group","c":"Brand Film","o":"h","s":29},{"i":"4Zcr-BEsQIE","t":"Microblading Certification Course","v":"Permanent Makeup Academy","c":"Training","o":"h","s":30},{"i":"alllY9l0F0E","t":"Microblading Training Workshop","v":"Permanent Makeup Academy","c":"Training","o":"h","s":31},{"i":"CYxJBk32Fis","t":"Beauty Clinic Brand Film — Short","v":"Toronto","c":"Brand Film","o":"h","s":32},{"i":"lcq-3RlfnQo","t":"Beauty Close-Up Film — Makeup & Lashes","v":"Divan Group","c":"Brows","o":"h","s":33},{"i":"qlj6BeFCGRQ","t":"Cosmetic Clinic Brand Film — Clinic Space","v":"Toronto","c":"Brand Film","o":"h","s":34},{"i":"2QSOkfMPdpM","t":"PRP Treatment Film","v":"Toronto Cosmetic Clinic","c":"Injectables","o":"h","s":35},{"i":"gQ3q2tc5pt4","t":"Clinic Announcement Film","v":"Roda Clinic, Toronto","c":"Brand Film","o":"h","s":36},{"i":"E3NSKjX61sc","t":"Clinic Brand Film — Spa Day (Alt Cut)","v":"Roda Clinic, Toronto","c":"Brand Film","o":"h","s":37},{"i":"Acs0rrE-X4s","t":"Wood Therapy Body Contouring","v":"Muchin Beauty, Toronto","c":"Laser","o":"v","s":1},{"i":"JCuK6S7LrfQ","t":"Emerald Laser Treatment Session","v":"Muchin Beauty, Toronto","c":"Laser","o":"v","s":2},{"i":"j-k3MlKUlKw","t":"Laser — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":3},{"i":"7VmUJLqEwaA","t":"Signature Spa Ritual","v":"Muchin Beauty, Toronto","c":"Brand Film","o":"v","s":4},{"i":"L2dzeR6QXOQ","t":"Lip Filler — Before & After","v":"Sthetiques Academie, Montréal","c":"Injectables","o":"v","s":5},{"i":"8cWetJvxSL8","t":"Japanese Head Spa — Full Treatment","v":"Toronto Med Spa","c":"Head Spa","o":"v","s":6},{"i":"GQGzj9uCqkc","t":"Facial Treatment","v":"La Vita Cosmetic Clinic, Toronto","c":"Facial","o":"v","s":7},{"i":"ILfYVK4F_cM","t":"Pediatric Dental Brand Film","v":"Toronto Dental Clinic","c":"Brand Film","o":"v","s":8},{"i":"GN_TWfndDik","t":"Morning Skincare Routine","v":"Yzorane, Toronto","c":"Facial","o":"v","s":9},{"i":"8MgQDAJ9m8M","t":"Clinic Brand Tease","v":"Divan Group","c":"Brand Film","o":"v","s":10},{"i":"cNx-rCswJa0","t":"Underarm Laser Hair Removal","v":"Par Aesthetics, Toronto","c":"Laser","o":"v","s":11},{"i":"DHjvbp6Bfyc","t":"Laser Treatment Film","v":"Par Aesthetics, Toronto","c":"Laser","o":"v","s":12},{"i":"m6EcqMaz4ag","t":"Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":13},{"i":"-lm1TA5MrvA","t":"Sculptra — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":14},{"i":"62fkyYj7SbE","t":"Sculptra Explained","v":"Toronto Cosmetic Clinic","c":"Injectables","o":"v","s":15},{"i":"KwM2FM65sZg","t":"Cheek Fillers — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":16},{"i":"kB51gfgoQKw","t":"GentleMax Pro Laser Treatment","v":"Par Aesthetics, Toronto","c":"Laser","o":"v","s":17},{"i":"Rnn0EHWGiHo","t":"Botox Treatment","v":"Mouna Medispa, Montréal","c":"Injectables","o":"v","s":18},{"i":"fHeMKHda3-k","t":"Microneedling Treatment","v":"Muchin Beauty, Toronto","c":"Facial","o":"v","s":19},{"i":"u0iOkoHBaak","t":"Japanese Head Spa — Cosmetic Clinic Film","v":"Divan Group","c":"Head Spa","o":"v","s":20},{"i":"n20Y_zFy8Yw","t":"Clinic Brand Film","v":"Toronto Med Spa","c":"Brand Film","o":"v","s":21},{"i":"WJiW1tW40R4","t":"Lip Filler — Mapping & Injection","v":"Muchin Beauty, Toronto","c":"Injectables","o":"v","s":22},{"i":"05q6LTPdU2I","t":"LPG Endermologie — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":23},{"i":"6XDXvqcCMmA","t":"Behind the Scenes: Head Spa Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":24},{"i":"QJwk58xuFqs","t":"RF Skin Tightening — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":25},{"i":"tQ_0Evqnco0","t":"Botox — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":26},{"i":"JL3xssDnB3c","t":"Japanese Head Spa Now Open","v":"Mouna Medispa, Montréal","c":"Head Spa","o":"v","s":27},{"i":"Rkifi6KSHyw","t":"Dr Nobari on Male Breast Reduction","v":"Toronto","c":"Practitioner","o":"v","s":28},{"i":"dqjdwnMkTx8","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":29},{"i":"TnWZGESvBys","t":"Cheek Filler — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":30},{"i":"XbiuJZxCKcs","t":"Botox for Underarm Sweating","v":"Venus Cosmedical, Toronto","c":"Injectables","o":"v","s":31},{"i":"1dY0QhxvoMA","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":32},{"i":"D3RLLY93MU4","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":33},{"i":"cDceF5GbfbU","t":"Medical-Grade Skincare — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":34},{"i":"Sb8png2kUZ8","t":"Behind the Scenes: Men's Facial Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":35},{"i":"U_bGMaIexT8","t":"Eyebrow Mapping & Microblading","v":"Marvell Beauty, Toronto","c":"Brows","o":"v","s":36},{"i":"vkYVuI8DR8c","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":37},{"i":"m-YhEjf5huM","t":"Emerald Laser Body Contouring","v":"Muchin Beauty, Toronto","c":"Laser","o":"v","s":38},{"i":"DZrFdjDOIys","t":"Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":39},{"i":"K7WIFI1mbQU","t":"Vampire Facial (PRP) — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":40},{"i":"qd4UT7XQ8Xg","t":"Patient Testimonial — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":41},{"i":"3agneG_rDss","t":"Behind the Scenes on a Clinic Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":42},{"i":"cxu6VT2zNTI","t":"Lip Filler Before & After Detail","v":"Par Aesthetics, Toronto","c":"Injectables","o":"v","s":43},{"i":"Y1hoYOGJW2Q","t":"Men's Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":44},{"i":"qoetNeL_3gI","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":45},{"i":"9OcltwQLWGY","t":"Barbie Botox — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":46},{"i":"ViB04XwBbHM","t":"Botox Treatment","v":"Sthetiques Academie, Montréal","c":"Injectables","o":"v","s":47},{"i":"x_bbzF000y8","t":"Lip Filler Explained","v":"Toronto Cosmetic Clinic","c":"Injectables","o":"v","s":48},{"i":"nVuYx9ycgJQ","t":"Japanese Head Spa Explained","v":"Muchin Beauty, Toronto","c":"Head Spa","o":"v","s":49},{"i":"emZDSorVmVw","t":"Men's Facial & Skin Treatment","v":"Sthetiques Academie, Montréal","c":"Facial","o":"v","s":50},{"i":"EOx5YHkf3OE","t":"Nano-Fractional RF — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":51},{"i":"TvgnzTwDd5s","t":"Exilis Skin Tightening — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":52},{"i":"59lgDPFvUDk","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":53},{"i":"HUVPOx-mx_0","t":"Dr Ariana Patient Q&A","v":"Toronto Cosmetic Clinic","c":"Practitioner","o":"v","s":54},{"i":"_xlQld1aAXI","t":"Facial Treatment — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":55},{"i":"reOyBtn5pp0","t":"Vampire Facial (PRP) — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":56},{"i":"90jGTPXLgj0","t":"3D Facial Analysis & Skin Consultation","v":"Toronto Clinic","c":"Facial","o":"v","s":57},{"i":"GO6fyVSNqBo","t":"Lip Filler Consultation","v":"Par Aesthetics, Toronto","c":"Injectables","o":"v","s":58},{"i":"G-10a9-NLUY","t":"Sculptra — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":59},{"i":"rC6axczJA0o","t":"Laser Treatment — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":60},{"i":"ffHYqqiYCNg","t":"Diamond Polar RF — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":61},{"i":"H7NVzklrVBw","t":"Morpheus8 RF Microneedling — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":62},{"i":"UGXjoQaDm6I","t":"Radiesse Filler — Cheek & Jawline","v":"Toronto Cosmetic Clinic","c":"Injectables","o":"v","s":63},{"i":"9SIWEmTUW6o","t":"Cosmetic Clinic Showcase — Divan Group","v":"","c":"Brand Film","o":"v","s":64},{"i":"5DKmLsgeoUI","t":"Back Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":65},{"i":"4W-NFC_-RGo","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":66},{"i":"_fdMAjfc7ys","t":"Clinic Interview — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":67},{"i":"4YJZznQvEuc","t":"Men's Skin Treatment","v":"Mouna Medispa, Montréal","c":"Facial","o":"v","s":68},{"i":"-0e97kv2AFk","t":"Men's Facial Treatment","v":"Muchin Beauty, Toronto","c":"Facial","o":"v","s":69},{"i":"GVNCGOx08Dc","t":"Facial Treatment","v":"Sthetiques Academie, Montréal","c":"Facial","o":"v","s":70},{"i":"1yoE8HxHgSY","t":"Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":71},{"i":"L3xxVPvOq6Q","t":"Hair & Scalp Oil Collection","v":"Yzorane, Toronto","c":"Head Spa","o":"v","s":72},{"i":"gg1IdA7oc3M","t":"Skin Treatment — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":73},{"i":"w3j6GwboZ1s","t":"Laser Hair Removal Session","v":"Toronto Med Spa","c":"Laser","o":"v","s":74},{"i":"dfN7gSP-30s","t":"Scalp & Hair Treatment","v":"Yzorane, Toronto","c":"Head Spa","o":"v","s":75},{"i":"oyRvM1AwyGs","t":"Cosmetic Clinic Showcase — Divan Group","v":"","c":"Brand Film","o":"v","s":76},{"i":"DgcxSkYx0EQ","t":"Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":77},{"i":"HXlCR8Di0CE","t":"Scalp Microneedling for Hair Growth","v":"Toronto Beauty Clinic","c":"Head Spa","o":"v","s":78},{"i":"KYZC6NY5GjA","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":79},{"i":"Cddn2uLrT8o","t":"Hair Treatment — Cosmetic Clinic Film","v":"Divan Group","c":"Head Spa","o":"v","s":80},{"i":"ygB-y4lo2wY","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":81},{"i":"XDgpAnm8KO4","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":82},{"i":"9Fo6J0Mu-8M","t":"Lip Filler Treatment","v":"Sthetiques Academie, Montréal","c":"Injectables","o":"v","s":83},{"i":"CarWSzw8qhE","t":"Rooftop Wellness Event Film","v":"Toronto","c":"Brand Film","o":"v","s":84},{"i":"SMJikc4zTEQ","t":"Facial Treatment Session","v":"Sthetiques Academie, Montréal","c":"Facial","o":"v","s":85},{"i":"EcGyJEEC_94","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":86},{"i":"a_sNkV6BDDY","t":"Dr Ariana on Cosmetic Treatments","v":"Toronto Clinic Interview","c":"Practitioner","o":"v","s":87},{"i":"sYKyoStTBeM","t":"Wood Therapy — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":88},{"i":"ThAYIS4L3lI","t":"Hydrodermabrasion Facial","v":"Sthetiques Academie, Montréal","c":"Facial","o":"v","s":89},{"i":"qejiHqzW1gY","t":"Lip Filler Treatment","v":"Muchin Beauty, Toronto","c":"Injectables","o":"v","s":90},{"i":"g9UJtAiAWWM","t":"Behind the Scenes: Facial Treatment Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":91},{"i":"m-yZgBBrPS4","t":"Behind the Scenes: Filming a Treatment","v":"Divan Group","c":"Behind the Scenes","o":"v","s":92},{"i":"A5pAzYNM7RE","t":"Laser — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":93},{"i":"l7R_428cfWI","t":"Facial Redness Explained","v":"Ontario Dermatology Clinic","c":"Facial","o":"v","s":94},{"i":"jfp58ReSmm4","t":"Eyebrow Treatment Detail","v":"Sthetiques Academie, Montréal","c":"Brows","o":"v","s":95},{"i":"Jd_tRWgTRlA","t":"Behind the Scenes: Clinic Photo Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":96},{"i":"PYOGSg1MhA0","t":"Wood Therapy — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":97},{"i":"VlkP6TgXUbQ","t":"Clinic Consultation","v":"Toronto Cosmetic Clinic","c":"Practitioner","o":"v","s":98},{"i":"ftfL4MKt2Gs","t":"Skincare Advice from a Clinic Owner","v":"Toronto","c":"Facial","o":"v","s":99},{"i":"wBJCpodU5Ik","t":"Facial Treatment Detail","v":"Sthetiques Academie, Montréal","c":"Facial","o":"v","s":100},{"i":"ODULAp_Iros","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":101},{"i":"ZfmRA-vfk2A","t":"Skin Booster Treatment","v":"Sthetiques Academie, Montréal","c":"Injectables","o":"v","s":102},{"i":"gaMiny5lsQU","t":"Clinic Interview — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":103},{"i":"svhSVy-uBfw","t":"Cosmetic Clinic Showcase — Divan Group","v":"","c":"Brand Film","o":"v","s":104},{"i":"HJ24AVafAzI","t":"Rosewater Skincare — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":105},{"i":"_R8ycNpLEu4","t":"Behind the Scenes: Clinic Production","v":"Divan Group","c":"Behind the Scenes","o":"v","s":106},{"i":"3wIXw6kJ6cY","t":"Behind the Scenes: Treatment Shoot","v":"Divan Group, Toronto","c":"Behind the Scenes","o":"v","s":107},{"i":"T0AeVVygQc0","t":"Behind the Scenes: LED Treatment Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":108},{"i":"qlkK2bF35So","t":"Clinic Interview — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":109},{"i":"qrxMyJHVub8","t":"Behind the Scenes: Doctor Interview Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":110},{"i":"27Io_iRETF4","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":111},{"i":"sgi8KtRYDqo","t":"Dental Clinic Brand Film","v":"Toronto Dental Clinic","c":"Brand Film","o":"v","s":112},{"i":"200cV3ld7Bo","t":"Japanese Head Spa Treatment","v":"Muchin Beauty, Toronto","c":"Head Spa","o":"v","s":113},{"i":"J4jRwYYs9q0","t":"Laser Hair Removal (Français)","v":"Mouna Medispa, Montréal","c":"Laser","o":"v","s":114},{"i":"UVIRuc866Zc","t":"Dr Bamdad on Treatment Options","v":"Toronto Clinic","c":"Practitioner","o":"v","s":115},{"i":"EeDLZfrwEEE","t":"Clinic Owner Interview","v":"Toronto Cosmetic Clinic","c":"Practitioner","o":"v","s":116},{"i":"N1w78IS8aHg","t":"Dr Bamdad Clinic Interview","v":"Toronto","c":"Practitioner","o":"v","s":117},{"i":"Ulk61hOYTXE","t":"Clinic Christmas Film","v":"Muchin Beauty, Toronto","c":"Brand Film","o":"v","s":118},{"i":"ebeKpuV-VBY","t":"Doctor Q&A — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":119},{"i":"ktKbydkVF3c","t":"Gynecomastia Treatment — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":120},{"i":"4Am-rHuMu6k","t":"Lip Filler Treatment","v":"Sthetiques Academie, Montréal","c":"Injectables","o":"v","s":121},{"i":"HmowsdNJo0g","t":"Men's Facial Treatment","v":"La Vita Cosmetic Clinic, Toronto","c":"Facial","o":"v","s":122},{"i":"_hMyT76JQcU","t":"Signature Facial — Winter Film","v":"Toronto Med Spa","c":"Facial","o":"v","s":123},{"i":"rGdm9DPkaZI","t":"HIFU Skin Tightening Treatment","v":"Toronto Med Spa","c":"Laser","o":"v","s":124},{"i":"LorUtWLAKFw","t":"Spa & Wellness Brand Film","v":"Toronto","c":"Brand Film","o":"v","s":125},{"i":"gs22efhtiiA","t":"Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":126},{"i":"NS35VhK9RFA","t":"Wood Therapy — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":127},{"i":"S2sU1gvo6ig","t":"Vein Treatment — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":128},{"i":"fHQcHzFx-OY","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":129},{"i":"YlYs1b7__tw","t":"Radiesse Dermal Filler — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":130},{"i":"9Q2joz6kZjA","t":"Behind the Scenes: Facial Shoot","v":"Toronto Cosmetic Clinic","c":"Behind the Scenes","o":"v","s":131},{"i":"67IbZzHyZAw","t":"Behind the Scenes: Laser Shoot","v":"Muchin Beauty, Toronto","c":"Behind the Scenes","o":"v","s":132},{"i":"c79d4BtV9dI","t":"Eyebrow Shaping Explained","v":"Marvell Beauty, Toronto","c":"Brows","o":"v","s":133},{"i":"sxCl9QOMgd4","t":"Clinic Interview — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":134},{"i":"fWvUT91EKHk","t":"Exilis Facial — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":135},{"i":"A1UEoxxG1t8","t":"Skin Consultation","v":"Sthetiques Academie, Montréal","c":"Practitioner","o":"v","s":136},{"i":"s5h52jxxc74","t":"Wood Therapy Body Contouring","v":"Toronto Med Spa","c":"Laser","o":"v","s":137},{"i":"jgw9yrprbJE","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":138},{"i":"qeFVnnh2Jm8","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":139},{"i":"TQc2noqXzXI","t":"Clinic Interview — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":140},{"i":"r8QE5tRkCjQ","t":"Clinic Interview — Cosmetic Clinic Film","v":"Divan Group","c":"Practitioner","o":"v","s":141},{"i":"Ihdia27hVRM","t":"Cosmetic Clinic Showcase — Divan Group","v":"","c":"Brand Film","o":"v","s":142},{"i":"ZZmBkLPMXJw","t":"Clinic Tour — Cosmetic Clinic Film","v":"Divan Group","c":"Brand Film","o":"v","s":143},{"i":"Dyo79v48RxI","t":"Dr Vij Clinic Interview","v":"Toronto","c":"Practitioner","o":"v","s":144},{"i":"6sAaucewBvs","t":"Laser Treatment (Français)","v":"Mouna Medispa, Montréal","c":"Laser","o":"v","s":145},{"i":"lFqQKCNnJts","t":"Men's Facial Treatment","v":"Toronto Med Spa","c":"Facial","o":"v","s":146},{"i":"QUZYguJ_Cp8","t":"Signature Facial Treatment","v":"Toronto Cosmetic Clinic","c":"Facial","o":"v","s":147},{"i":"c9SM0bKjl7U","t":"Facial Treatment Sequence","v":"Toronto Cosmetic Clinic","c":"Facial","o":"v","s":148},{"i":"msxDxGps75k","t":"Microblading & Brow Shading","v":"Toronto Permanent Makeup Studio","c":"Brows","o":"v","s":149},{"i":"Lz0qtHVS8wM","t":"Lip Filler Result","v":"Par Aesthetics, Toronto","c":"Injectables","o":"v","s":150},{"i":"udSWB8wNue0","t":"Behind the Scenes: Tennis Shoot","v":"Divan Group","c":"Behind the Scenes","o":"v","s":151},{"i":"O-JEZmxqaIk","t":"Laser Hair Removal for Men","v":"Sthetiques Academie, Montréal","c":"Laser","o":"v","s":152},{"i":"WqeDWrOM2b8","t":"Laser Skin Treatment","v":"Sthetiques Academie, Montréal","c":"Laser","o":"v","s":153},{"i":"IQVz0MbxKlk","t":"LED Light Therapy Facial","v":"Toronto Med Spa","c":"Facial","o":"v","s":154},{"i":"afOWcaMOh5M","t":"Head Spa Patient Testimonial","v":"Muchin Beauty, Toronto","c":"Practitioner","o":"v","s":155},{"i":"iOesfE9gC0g","t":"Microdermabrasion Facial","v":"Toronto Cosmetic Clinic","c":"Facial","o":"v","s":156},{"i":"91wnuIpjFaU","t":"Behind the Scenes: Clinic Shoot","v":"Par Aesthetics, Toronto","c":"Behind the Scenes","o":"v","s":157},{"i":"GYFCOAcOZKU","t":"Lip Filler & Brow Treatment","v":"Toronto Cosmetic Clinic","c":"Brows","o":"v","s":158},{"i":"ZXjEOhBWoAU","t":"Trap Tox Explained","v":"Sthetiques Academie, Montréal","c":"Injectables","o":"v","s":159},{"i":"LdDUAExhIV4","t":"Emerald Laser — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":160},{"i":"5hMd4QVYgeI","t":"Chemical Peel — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":161},{"i":"9q_GOyETaNA","t":"Laser Treatment — Cosmetic Clinic Film","v":"Divan Group","c":"Laser","o":"v","s":162},{"i":"rhpH9GWIEFs","t":"Laser Treatment Session","v":"Muchin Beauty, Toronto","c":"Laser","o":"v","s":163},{"i":"2VrneNMXZNE","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":164},{"i":"L_n2SLLztaY","t":"Laser Hair Removal Session","v":"Muchin Beauty, Toronto","c":"Laser","o":"v","s":165},{"i":"--Rw6F4Esp4","t":"Lip Fillers — Cosmetic Clinic Film","v":"Divan Group","c":"Injectables","o":"v","s":166},{"i":"TxyDM3q9eqE","t":"PRP Treatment — Scalp & Face","v":"Toronto Cosmetic Clinic","c":"Head Spa","o":"v","s":167},{"i":"UMSFl6kFaW8","t":"Sculptra Collagen Biostimulator","v":"Toronto Cosmetic Clinic","c":"Injectables","o":"v","s":168},{"i":"YdyOoYOQ6ko","t":"Skin Treatment Before & After","v":"Sthetiques Academie, Montréal","c":"Facial","o":"v","s":169},{"i":"9kzMOz58cfA","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":170},{"i":"cVR3WzgzW1I","t":"Radiesse Filler — Neck & Jawline","v":"Toronto Cosmetic Clinic","c":"Injectables","o":"v","s":171},{"i":"KfVLFWy5tlU","t":"Microchanneling — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":172},{"i":"LOS0uQGuKes","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":173},{"i":"La2812aoSXE","t":"Microneedling — Cosmetic Clinic Film","v":"Divan Group","c":"Facial","o":"v","s":174},{"i":"uLAthewv3Qc","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":175},{"i":"CshU4RnlFp0","t":"Colour Grading Showreel","v":"Divan Group","c":"Behind the Scenes","o":"v","s":176},{"i":"_wH74-S4KGc","t":"Back Facial — Jelly Mask","v":"Muchin Beauty, Toronto","c":"Facial","o":"v","s":177},{"i":"lv7pqvCQioQ","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":178},{"i":"k1iFL0DeZro","t":"Cosmetic Clinic Brand Film — Divan Group","v":"","c":"Brand Film","o":"v","s":179},{"i":"yuZBydO4vZM","t":"Jelly Mask Facial","v":"Toronto Medical Spa","c":"Facial","o":"v","s":180}];
-const KEY = 'cc-film-sorter-v1';
+const KEY = 'cc-film-sorter-v2';
 
 let state = {};
-try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { state = {}; }
+try {
+  const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (raw) state = raw;
+  else {
+    // carry over anything tagged under the old single-choice version
+    const old = JSON.parse(localStorage.getItem('cc-film-sorter-v1') || '{}');
+    Object.entries(old).forEach(([id, v]) => {
+      const e = {};
+      if (v.tag && v.tag !== 'hide') e.t = [v.tag];
+      if (v.tag === 'hide') e.p = 'hide';
+      if (v.star) e.p = 'home';
+      if (e.t || e.p) state[id] = e;
+    });
+  }
+} catch (e) { state = {}; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
 
 const $ = s => document.querySelector(s);
 const grid = $('#grid');
 let selected = null;
+const ent = id => state[id] || {};
+const tagsOf = id => ent(id).t || [];
+const placeOf = id => ent(id).p || '';
 
-// legend
-$('#legend').innerHTML = TAGS.map((t,i) =>
-  `<span><i class="dot" style="background:${t.c}"></i><b style="color:var(--bone-2)">${i+1}</b> ${t.n} — ${t.d}</span>`
-).join('');
+$('#legend').innerHTML =
+  TAGS.map((t,i) => `<span><i class="dot" style="background:${t.c}"></i><b style="color:var(--bone-2)">${i+1}</b> ${t.n} — ${t.d}</span>`).join('') +
+  `<span style="width:100%; height:2px"></span>` +
+  PLACES.map(p => `<span><i class="dot" style="background:${p.c}"></i><b style="color:var(--bone-2)">${p.key}</b> ${p.n} — ${p.d}</span>`).join('');
 
-// category filter options
-[...new Set(FILMS.map(f => f.c))].sort().forEach(c => {
-  $('#fCat').insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`);
-});
+[...new Set(FILMS.map(f => f.c))].sort().forEach(c => $('#fCat').insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
 TAGS.forEach(t => $('#fTag').insertAdjacentHTML('beforeend', `<option value="${t.k}">${t.n}</option>`));
+PLACES.forEach(p => $('#fPlace').insertAdjacentHTML('beforeend', `<option value="${p.k}">${p.n}</option>`));
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function cardHTML(f, idx) {
-  const st = state[f.i] || {};
-  const tag = TAGS.find(t => t.k === st.tag);
-  return `<article class="card${st.tag ? ' done' : ''}" data-id="${f.i}" data-idx="${idx}"
-      style="${tag ? `--tagcol:${tag.c}` : ''}">
+  const ts = tagsOf(f.i), pl = placeOf(f.i);
+  const place = PLACES.find(p => p.k === pl);
+  const edge = ts.length ? (TAGS.find(t => t.k === ts[0]) || {}).c : null;
+  return `<article class="card${ts.length ? ' done' : ''}" data-id="${f.i}" data-idx="${idx}"${edge ? ` style="--edge:${edge}"` : ''}>
     <div class="thumb" data-play="${f.i}">
       <img decoding="async" src="https://i.ytimg.com/vi/${f.i}/hqdefault.jpg" alt="" data-alt="1"
            onerror="if(this.dataset.alt){this.dataset.alt='';this.src='https://img.youtube.com/vi/${f.i}/hqdefault.jpg';}else{this.style.display='none';this.nextElementSibling.hidden=false;}">
       <div class="fallback" hidden>${esc(f.t)}<br><small>(thumbnail offline — tap to watch)</small></div>
       <span class="play"></span>
       <span class="badge">${f.o === 'h' ? '16:9' : '9:16'}</span>
+      ${place && place.k !== 'archive' ? `<span class="placeflag" style="background:${place.c}">${place.s}</span>` : ''}
       <div class="quick">
-        ${TAGS.map((t, n) => `<button class="qc${st.tag === t.k ? ' on' : ''}" style="--pc:${t.c}"
-            data-tag="${t.k}" data-id="${f.i}" title="${t.n}">${n + 1}</button>`).join('')}
-        <button class="qc qstar${st.star ? ' on' : ''}" data-star="${f.i}" title="Featured">★</button>
+        ${TAGS.map((t, n) => `<button class="qc${ts.includes(t.k) ? ' on' : ''}" style="--pc:${t.c}" data-tag="${t.k}" data-id="${f.i}" title="${t.n}">${n + 1}</button>`).join('')}
       </div>
     </div>
     <div class="body">
       <div class="ttl">${esc(f.t)}</div>
       <div class="meta">${esc(f.c)}${f.v ? ' · ' + esc(f.v) : ''}</div>
-      <div class="pills">
-        ${TAGS.map(t => `<button class="pill${st.tag === t.k ? ' on' : ''}" style="--pc:${t.c}"
-            data-tag="${t.k}" data-id="${f.i}" title="${t.n} — ${t.d}">${t.s}</button>`).join('')}
-        <button class="pill star${st.star ? ' on' : ''}" data-star="${f.i}" title="Featured — push this one forward">★</button>
-      </div>
+      <div class="row">${TAGS.map(t => `<button class="pill${ts.includes(t.k) ? ' on' : ''}" style="--pc:${t.c}" data-tag="${t.k}" data-id="${f.i}" title="${t.d}">${t.s}</button>`).join('')}</div>
+      <div class="row places">${PLACES.map(p => `<button class="pill${pl === p.k ? ' on' : ''}" style="--pc:${p.c}" data-place="${p.k}" data-id="${f.i}" title="${p.d}">${p.s}</button>`).join('')}</div>
     </div>
   </article>`;
 }
-function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 let view = [];
 function render() {
   const st = $('#fStatus').value, or = $('#fOrient').value, ct = $('#fCat').value,
-        tg = $('#fTag').value, q = $('#q').value.trim().toLowerCase();
+        tg = $('#fTag').value, pc = $('#fPlace').value, q = $('#q').value.trim().toLowerCase();
   view = FILMS.filter(f => {
-    const s = state[f.i] || {};
-    if (st === 'todo' && s.tag) return false;
-    if (st === 'done' && !s.tag) return false;
-    if (st === 'star' && !s.star) return false;
+    const ts = tagsOf(f.i), pl = placeOf(f.i);
+    if (st === 'todo' && ts.length) return false;
+    if (st === 'done' && !ts.length) return false;
+    if (st === 'noplace' && (!ts.length || pl)) return false;
     if (or !== 'all' && f.o !== or) return false;
     if (ct !== 'all' && f.c !== ct) return false;
-    if (tg !== 'all' && s.tag !== tg) return false;
+    if (tg !== 'all' && !ts.includes(tg)) return false;
+    if (pc !== 'all' && pl !== pc) return false;
     if (q && !(f.t + ' ' + f.v + ' ' + f.c).toLowerCase().includes(q)) return false;
     return true;
   });
   grid.innerHTML = view.map(cardHTML).join('');
   $('#empty').hidden = view.length > 0;
+  if (selected) grid.querySelector(`.card[data-id="${selected}"]`)?.classList.add('sel');
   counts();
 }
 function counts() {
-  const vals = Object.values(state);
-  const d = vals.filter(v => v.tag).length, f = vals.filter(v => v.star).length;
-  $('#done').textContent = d; $('#feat').textContent = f;
-  $('#barfill').style.width = (d / FILMS.length * 100).toFixed(1) + '%';
+  const ids = Object.keys(state);
+  const n = k => ids.filter(i => placeOf(i) === k).length;
+  const done = ids.filter(i => tagsOf(i).length).length;
+  $('#nDone').textContent = done;
+  $('#nHero').textContent = n('hero'); $('#nHome').textContent = n('home');
+  $('#nPage').textContent = n('page'); $('#nHide').textContent = n('hide');
+  $('#barfill').style.width = (done / FILMS.length * 100).toFixed(1) + '%';
 }
-function setTag(id, tag) {
-  state[id] = state[id] || {};
-  state[id].tag = (state[id].tag === tag) ? undefined : tag;
-  if (!state[id].tag && !state[id].star) delete state[id];
-  save(); refreshCard(id);
+function prune(id) { const e = state[id]; if (e && !(e.t && e.t.length) && !e.p) delete state[id]; }
+function toggleTag(id, tag) {
+  const e = state[id] = state[id] || {};
+  e.t = e.t || [];
+  const i = e.t.indexOf(tag);
+  if (i >= 0) e.t.splice(i, 1); else e.t.push(tag);
+  if (!e.t.length) delete e.t;
+  prune(id); save(); refreshCard(id);
 }
-function toggleStar(id) {
-  state[id] = state[id] || {};
-  state[id].star = !state[id].star;
-  if (!state[id].tag && !state[id].star) delete state[id];
-  save(); refreshCard(id);
+function setPlace(id, p) {
+  const e = state[id] = state[id] || {};
+  e.p = (e.p === p) ? undefined : p;
+  if (!e.p) delete e.p;
+  prune(id); save(); refreshCard(id);
 }
+function clearFilm(id) { delete state[id]; save(); refreshCard(id); }
 function refreshCard(id) {
   const el = grid.querySelector(`.card[data-id="${id}"]`);
-  const hiddenNow = ($('#fStatus').value === 'todo' && state[id] && state[id].tag);
-  if (!el || hiddenNow) { render(); return; }
-  const idx = +el.dataset.idx;
-  el.outerHTML = cardHTML(FILMS.find(f => f.i === id), idx);
+  const dropsOut = ($('#fStatus').value === 'todo' && tagsOf(id).length) ||
+                   ($('#fStatus').value === 'noplace' && placeOf(id));
+  if (!el || dropsOut) { render(); return; }
+  el.outerHTML = cardHTML(FILMS.find(f => f.i === id), +el.dataset.idx);
   if (selected === id) grid.querySelector(`.card[data-id="${id}"]`)?.classList.add('sel');
   counts();
 }
-
 function select(id) {
   selected = id;
   grid.querySelectorAll('.card.sel').forEach(c => c.classList.remove('sel'));
   grid.querySelector(`.card[data-id="${id}"]`)?.classList.add('sel');
 }
+
 grid.addEventListener('click', e => {
-  // Any click inside a card selects it, so the number keys always have a target —
-  // including a click on the thumbnail, which also opens the film.
   const card = e.target.closest('.card');
   if (card) select(card.dataset.id);
-  const pill = e.target.closest('[data-tag]');
-  if (pill) { setTag(pill.dataset.id, pill.dataset.tag); return; }
-  const star = e.target.closest('[data-star]');
-  if (star) { toggleStar(star.dataset.star); return; }
+  const t = e.target.closest('[data-tag]');
+  if (t) { toggleTag(t.dataset.id, t.dataset.tag); return; }
+  const p = e.target.closest('[data-place]');
+  if (p) { setPlace(p.dataset.id, p.dataset.place); return; }
   const play = e.target.closest('[data-play]');
   if (play) { openReview(play.dataset.play); return; }
 });
 
-// ---- review mode: watch it big, tag it, and it moves to the next by itself ----
+// ---- review mode ----
 const dlg = $('#review');
 let reviewId = null;
 function openReview(id) {
   reviewId = id; select(id);
-  const f = FILMS.find(x => x.i === id), st = state[id] || {};
+  const f = FILMS.find(x => x.i === id), ts = tagsOf(id), pl = placeOf(id);
   const pos = view.findIndex(x => x.i === id);
-  $('#rvPlayer').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1"
-      title="${esc(f.t)}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+  $('#rvPlayer').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1" title="${esc(f.t)}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
   $('#rvT').textContent = f.t;
   $('#rvM').textContent = `${f.c}${f.v ? ' · ' + f.v : ''} · ${f.o === 'h' ? '16:9' : '9:16'}`;
   $('#rvPos').textContent = pos >= 0 ? `${pos + 1} of ${view.length}` : '';
   $('#rvYT').href = 'https://www.youtube.com/watch?v=' + id;
-  $('#rvTags').innerHTML = TAGS.map((t, n) => `<button class="pill${st.tag === t.k ? ' on' : ''}"
-      style="--pc:${t.c}" data-rtag="${t.k}">${n + 1} ${t.n}</button>`).join('') +
-    `<button class="pill star${st.star ? ' on' : ''}" data-rstar="1">★ Featured</button>`;
+  $('#rvTags').innerHTML = TAGS.map((t, n) => `<button class="pill${ts.includes(t.k) ? ' on' : ''}" style="--pc:${t.c}" data-rtag="${t.k}">${n + 1} ${t.n}</button>`).join('');
+  $('#rvPlaces').innerHTML = PLACES.map(p => `<button class="pill${pl === p.k ? ' on' : ''}" style="--pc:${p.c}" data-rplace="${p.k}">${p.key} ${p.n}</button>`).join('');
   if (!dlg.open) dlg.showModal();
 }
 function reviewStep(d) {
@@ -394,40 +380,36 @@ function closeReview() { $('#rvPlayer').innerHTML = ''; reviewId = null; if (dlg
 dlg.addEventListener('close', () => { $('#rvPlayer').innerHTML = ''; reviewId = null; });
 $('#rvTags').addEventListener('click', e => {
   const t = e.target.closest('[data-rtag]');
-  if (t) {
-    const wasTodo = $('#fStatus').value === 'todo';
-    const ids = view.map(f => f.i), at = ids.indexOf(reviewId);
-    setTag(reviewId, t.dataset.rtag);
-    // In "not sorted yet" the film just left the list, so the next one has slid
-    // into its index — step to that index rather than past it.
-    const next = wasTodo ? view[at] : view[at + 1];
-    if (next) openReview(next.i); else closeReview();
-    return;
-  }
-  const st = e.target.closest('[data-rstar]');
-  if (st) { toggleStar(reviewId); openReview(reviewId); }
+  if (t) { toggleTag(reviewId, t.dataset.rtag); openReview(reviewId); }
+});
+// Placement is the "done with this one" signal, so it advances. Tags do not —
+// a film often needs two or three of them.
+$('#rvPlaces').addEventListener('click', e => {
+  const p = e.target.closest('[data-rplace]');
+  if (!p) return;
+  const ids = view.map(f => f.i), at = ids.indexOf(reviewId);
+  const filtering = $('#fStatus').value === 'noplace';
+  setPlace(reviewId, p.dataset.rplace);
+  const next = filtering ? view[at] : view[at + 1];
+  if (next) openReview(next.i); else closeReview();
 });
 $('#rvNext').addEventListener('click', () => reviewStep(1));
 $('#rvPrev').addEventListener('click', () => reviewStep(-1));
 $('#rvClose').addEventListener('click', closeReview);
 
 document.addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  const place = PLACES.find(p => p.key.toLowerCase() === k);
+  const num = parseInt(e.key, 10);
   if (dlg.open) {
-    if (e.key === 'Escape') return;                       // dialog closes itself
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-    if (e.key === 'ArrowRight' || e.key === 'j') { e.preventDefault(); reviewStep(1); return; }
-    if (e.key === 'ArrowLeft'  || e.key === 'k') { e.preventDefault(); reviewStep(-1); return; }
-    if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleStar(reviewId); openReview(reviewId); return; }
-    const n0 = parseInt(e.key, 10);
-    if (n0 >= 1 && n0 <= TAGS.length) {
-      e.preventDefault();
-      $('#rvTags').querySelector(`[data-rtag="${TAGS[n0 - 1].k}"]`)?.click();
-    }
+    if (e.key === 'Escape') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); reviewStep(1); return; }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); reviewStep(-1); return; }
+    if (num >= 1 && num <= TAGS.length) { e.preventDefault(); $('#rvTags').querySelector(`[data-rtag="${TAGS[num-1].k}"]`)?.click(); return; }
+    if (place) { e.preventDefault(); $('#rvPlaces').querySelector(`[data-rplace="${place.k}"]`)?.click(); }
     return;
   }
-  
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || document.querySelector('dialog[open]')) return;
-  if (e.key === ' ' && selected) { e.preventDefault(); openReview(selected); return; }
   const move = d => {
     const ids = view.map(f => f.i);
     let i = ids.indexOf(selected);
@@ -435,53 +417,59 @@ document.addEventListener('keydown', e => {
     select(ids[i]);
     grid.querySelector(`.card[data-id="${selected}"]`)?.scrollIntoView({block:'nearest', behavior:'smooth'});
   };
-  if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); move(1); return; }
-  if (e.key === 'k' || e.key === 'ArrowUp')   { e.preventDefault(); move(-1); return; }
+  if (k === 'j' || e.key === 'ArrowDown') { e.preventDefault(); move(1); return; }
+  if (k === 'k' || e.key === 'ArrowUp')   { e.preventDefault(); move(-1); return; }
   if (!selected) return;
-  if (e.key === 'Enter') { window.open('https://www.youtube.com/watch?v=' + selected, '_blank', 'noopener'); return; }
-  if (e.key.toLowerCase() === 'f') { toggleStar(selected); return; }
-  if (e.key === '0') { if (state[selected]) { delete state[selected].tag; if (!state[selected].star) delete state[selected]; save(); refreshCard(selected); } return; }
-  const n = parseInt(e.key, 10);
-  if (n >= 1 && n <= TAGS.length) setTag(selected, TAGS[n - 1].k);
+  if (e.key === ' ') { e.preventDefault(); openReview(selected); return; }
+  if (e.key === '0') { clearFilm(selected); return; }
+  if (num >= 1 && num <= TAGS.length) { toggleTag(selected, TAGS[num-1].k); return; }
+  if (place) setPlace(selected, place.k);
 });
 
-['#fStatus','#fOrient','#fCat','#fTag'].forEach(s => $(s).addEventListener('change', render));
+['#fStatus','#fOrient','#fCat','#fTag','#fPlace'].forEach(s => $(s).addEventListener('change', render));
 $('#q').addEventListener('input', render);
 $('#reset').addEventListener('click', () => {
-  $('#fStatus').value = 'all'; $('#fOrient').value = 'all';
-  $('#fCat').value = 'all'; $('#fTag').value = 'all'; $('#q').value = ''; render();
+  ['#fStatus','#fOrient','#fCat','#fTag','#fPlace'].forEach(s => $(s).value = 'all');
+  $('#q').value = ''; render();
 });
 $('#clear').addEventListener('click', () => {
-  if (confirm('Clear every tag you have set? This cannot be undone.')) { state = {}; save(); render(); }
+  if (confirm('Clear every tag and placement? This cannot be undone.')) { state = {}; save(); render(); }
+});
+// A starting point from view counts — everything stays editable afterwards.
+$('#suggest').addEventListener('click', () => {
+  if (!confirm('Set Hero and Home from the most-watched films? It only fills placements you have left empty.')) return;
+  const wide = FILMS.filter(f => f.o === 'h'), tall = FILMS.filter(f => f.o !== 'h');
+  const put = (f, p) => { if (!placeOf(f.i)) { (state[f.i] = state[f.i] || {}).p = p; } };
+  if (wide[0] && !Object.keys(state).some(i => placeOf(i) === 'hero')) put(wide[0], 'hero');
+  wide.slice(1, 7).forEach(f => put(f, 'home'));
+  tall.slice(0, 14).forEach(f => put(f, 'home'));
+  save(); render();
 });
 
 function report() {
-  const lines = ['FILM SORTER RESULTS', ''];
-  TAGS.forEach(t => {
-    const rows = FILMS.filter(f => (state[f.i] || {}).tag === t.k);
+  const L = ['FILM SORTER RESULTS', ''];
+  PLACES.forEach(p => {
+    const rows = FILMS.filter(f => placeOf(f.i) === p.k);
     if (!rows.length) return;
-    lines.push(`## ${t.n.toUpperCase()} (${rows.length})`);
-    rows.forEach(f => lines.push(`${f.i} | ${(state[f.i].star ? '★ ' : '')}${f.t}${f.v ? ' — ' + f.v : ''}`));
-    lines.push('');
+    L.push(`## PLACEMENT — ${p.n.toUpperCase()} (${rows.length})`);
+    rows.forEach(f => L.push(`${f.i} | ${f.t}${f.v ? ' — ' + f.v : ''} | tags: ${tagsOf(f.i).join(', ') || 'none'}`));
+    L.push('');
   });
-  const stars = FILMS.filter(f => (state[f.i] || {}).star);
-  if (stars.length) {
-    lines.push(`## FEATURED (${stars.length})`);
-    stars.forEach(f => lines.push(`${f.i} | ${f.t}${f.v ? ' — ' + f.v : ''}`));
-    lines.push('');
-  }
-  const untagged = FILMS.filter(f => !(state[f.i] || {}).tag).length;
-  lines.push(`Not sorted: ${untagged} of ${FILMS.length}`);
-  lines.push('', 'JSON', JSON.stringify(state));
-  return lines.join('\n');
+  L.push('## BY TAG');
+  TAGS.forEach(t => {
+    const rows = FILMS.filter(f => tagsOf(f.i).includes(t.k));
+    if (rows.length) L.push(`${t.n} (${rows.length}): ${rows.map(f => f.i).join(' ')}`);
+  });
+  const untagged = FILMS.filter(f => !tagsOf(f.i).length).length;
+  L.push('', `Not tagged: ${untagged} of ${FILMS.length}`, '', 'JSON', JSON.stringify(state));
+  return L.join('\n');
 }
 $('#export').addEventListener('click', () => { $('#out').value = report(); $('#dlgExport').showModal(); });
 $('#closeExport').addEventListener('click', () => $('#dlgExport').close());
 $('#copy').addEventListener('click', async () => {
   const ta = $('#out');
-  try { await navigator.clipboard.writeText(ta.value); $('#copy').textContent = 'Copied'; }
-  catch (e) { ta.select(); document.execCommand('copy'); $('#copy').textContent = 'Copied'; }
-  setTimeout(() => $('#copy').textContent = 'Copy to clipboard', 1600);
+  try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
+  $('#copy').textContent = 'Copied'; setTimeout(() => $('#copy').textContent = 'Copy to clipboard', 1600);
 });
 $('#download').addEventListener('click', () => {
   const b = new Blob([report()], {type:'text/plain'});
