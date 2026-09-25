@@ -273,8 +273,8 @@ function cardHTML(f, idx) {
   return `<article class="card${st.tag ? ' done' : ''}" data-id="${f.i}" data-idx="${idx}"
       style="${tag ? `--tagcol:${tag.c}` : ''}">
     <div class="thumb" data-play="${f.i}">
-      <img loading="lazy" src="https://i.ytimg.com/vi/${f.i}/hqdefault.jpg" alt=""
-           onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+      <img decoding="async" src="https://i.ytimg.com/vi/${f.i}/hqdefault.jpg" alt="" data-alt="1"
+           onerror="if(this.dataset.alt){this.dataset.alt='';this.src='https://img.youtube.com/vi/${f.i}/hqdefault.jpg';}else{this.style.display='none';this.nextElementSibling.hidden=false;}">
       <div class="fallback" hidden>${esc(f.t)}<br><small>(thumbnail offline — tap to watch)</small></div>
       <span class="play"></span>
       <span class="badge">${f.o === 'h' ? '16:9' : '9:16'}</span>
