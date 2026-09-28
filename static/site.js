@@ -293,38 +293,198 @@
   /* ---------------------------------------------------------------
      9. Hero background film — only where it earns its bytes.
      --------------------------------------------------------------- */
-  /* Local hero film: plays once, fades to black, then stays on its last frame.
-     Reduced motion and Save-Data never see it move — the poster is that same
-     black frame, so the hero looks identical either way. */
-  var hv = d.querySelector('.hero-media video');
-  if (hv) {
-    var hconn = navigator.connection || {};
-    if (reduce || hconn.saveData) {
-      hv.removeAttribute('autoplay');
-      hv.preload = 'none';
-      try { hv.pause(); } catch (e) {}
-    } else {
-      hv.addEventListener('ended', function () { hv.classList.add('is-done'); });
-      var play = hv.play();
-      if (play && play.catch) play.catch(function () { /* autoplay refused: poster stands in */ });
+  /* ---------------------------------------------------------------
+     9. Live films. Anything marked [data-live] is a real film that plays,
+        muted, while it is on screen: the hero, the band and a film page's
+        stage always; in the rails, ONE card at a time — the one under the
+        mouse, else the one nearest the middle of the screen. A player exists
+        only while its film is on screen, so a page listing 189 films still
+        runs one or two players, never 189.
+        The still stays up until frames are really moving, then dissolves —
+        no black flash, no YouTube chrome. [data-src] (a self-hosted MP4)
+        always beats YouTube. Off for reduced motion, Save-Data and 2G, and
+        behind the Pause control, which is remembered.
+     --------------------------------------------------------------- */
+  var conn = navigator.connection || {};
+  var liveOff = reduce || conn.saveData || /(^|-)2g$/.test(conn.effectiveType || '');
+  var PKEY = 'cc-films-paused';
+  var paused = false;
+  try { paused = localStorage.getItem(PKEY) === '1'; } catch (e) {}
+  var ytReady = null;
+  function loadYT() {
+    if (ytReady) return ytReady;
+    ytReady = new Promise(function (res) {
+      if (w.YT && w.YT.Player) return res(w.YT);
+      var prev = w.onYouTubeIframeAPIReady;
+      w.onYouTubeIframeAPIReady = function () { if (prev) prev(); res(w.YT); };
+      var sc = d.createElement('script');
+      sc.src = 'https://www.youtube.com/iframe_api'; sc.async = true;
+      d.head.appendChild(sc);
+    });
+    return ytReady;
+  }
+  function reveal(el, st, delay) {
+    setTimeout(function () { if (el._live === st) el.classList.add('is-live'); }, delay);
+  }
+  function mount(el) {
+    if (el._live || liveOff || paused || el.hasAttribute('data-live-off')) return;
+    var st = {};
+    el._live = st;
+    var start = +el.getAttribute('data-start') || 0;
+    var end = +el.getAttribute('data-end') || 0;
+    var src = el.getAttribute('data-src');
+    if (src) {
+      var v = d.createElement('video');
+      v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('aria-hidden', 'true');
+      v.preload = 'auto'; v.tabIndex = -1; v.src = src;
+      v.addEventListener('playing', function () { reveal(el, st, 60); }, { once: true });
+      el.appendChild(v);
+      var pr = v.play();
+      if (pr && pr.catch) pr.catch(function () {});
+      st.kill = function () { v.pause(); v.removeAttribute('src'); try { v.load(); } catch (e) {} v.remove(); };
+      return;
     }
+    var host = d.createElement('div');
+    host.className = 'live-yt';
+    el.appendChild(host);
+    st.kill = function () { host.remove(); };
+    loadYT().then(function (YT) {
+      if (el._live !== st) return; // left the screen while the API loaded
+      var loop = 0;
+      var player = new YT.Player(host, {
+        host: 'https://www.youtube-nocookie.com',
+        videoId: el.getAttribute('data-live'),
+        playerVars: { autoplay: 1, mute: 1, controls: 0, playsinline: 1, rel: 0, modestbranding: 1, iv_load_policy: 3, disablekb: 1, fs: 0, cc_load_policy: 0, start: start, origin: location.origin },
+        events: {
+          onReady: function (e) { try { e.target.mute(); e.target.playVideo(); } catch (x) {} },
+          onStateChange: function (e) {
+            // YouTube lays its title bar over the first seconds of playback;
+            // the still covers until that has cleared.
+            if (e.data === 1 && !st.shown) { st.shown = true; reveal(el, st, 2600); }
+            if (e.data === 0) { try { e.target.seekTo(start, true); e.target.playVideo(); } catch (x) {} }
+          }
+        }
+      });
+      // Loop a second early, so YouTube's end screen never gets a frame.
+      if (end > start + 3) loop = setInterval(function () {
+        try { if (player.getCurrentTime && player.getCurrentTime() > end - 0.7) player.seekTo(start, true); } catch (x) {}
+      }, 400);
+      st.kill = function () {
+        clearInterval(loop);
+        try { player.destroy(); } catch (x) {}
+        [].slice.call(el.querySelectorAll('iframe, .live-yt')).forEach(function (n) { n.remove(); });
+      };
+    });
+  }
+  function unmount(el, now) {
+    var st = el._live;
+    if (!st) return;
+    el._live = null;
+    el.classList.remove('is-live');
+    // Let the still fade back over the film before the player goes, so the
+    // hand-back is a dissolve, not a cut.
+    if (now) st.kill && st.kill();
+    else setTimeout(function () { if (!el._live || el._live !== st) st.kill && st.kill(); }, 500);
   }
 
-  var hm = d.querySelector('.hero-media[data-yt]');
-  if (hm) {
-    var conn = navigator.connection || {};
-    if (wide() && !reduce && !conn.saveData) {
-      var id = hm.getAttribute('data-yt');
-      var f = d.createElement('iframe');
-      f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&mute=1&controls=0&loop=1&playlist=' + id +
-              '&playsinline=1&rel=0&modestbranding=1&disablekb=1&iv_load_policy=3';
-      f.allow = 'autoplay; encrypted-media'; f.tabIndex = -1;
-      f.setAttribute('aria-hidden', 'true');
-      f.title = hm.getAttribute('data-title') || 'Film';
-      f.addEventListener('load', function () { hm.classList.add('is-live'); });
-      hm.appendChild(f);
-    }
+  var stages = [].slice.call(d.querySelectorAll('.live-cover[data-live], .stage > .live[data-live]'));
+  var cards = [].slice.call(d.querySelectorAll('.film .live[data-live]'));
+  var stageSeen = new Set(), cardSeen = new Set();
+  var hovered = null, activeCard = null, pickT = 0;
+  function pickCard() {
+    if (hovered && cardSeen.has(hovered)) return hovered;
+    var cx = w.innerWidth / 2, cy = w.innerHeight / 2, best = null, bd = Infinity;
+    cardSeen.forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      if (!r.width) return; // filtered out
+      var dx = r.left + r.width / 2 - cx, dy = r.top + r.height / 2 - cy, dd = dx * dx + dy * dy;
+      if (dd < bd) { bd = dd; best = el; }
+    });
+    return best;
   }
+  function applyCard() {
+    var next = paused || liveOff ? null : pickCard();
+    if (next === activeCard) return;
+    if (activeCard) unmount(activeCard);
+    activeCard = next;
+    if (activeCard) mount(activeCard);
+  }
+  // Waits for the scroll to settle, so skimming past forty films doesn't
+  // start forty players.
+  function schedule() { clearTimeout(pickT); pickT = setTimeout(applyCard, 300); }
+
+  if (!liveOff && 'IntersectionObserver' in w) {
+    var sio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) { stageSeen.add(e.target); mount(e.target); }
+        else { stageSeen.delete(e.target); unmount(e.target); }
+      });
+    }, { threshold: 0.12 });
+    stages.forEach(function (el) { sio.observe(el); });
+    var cio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.intersectionRatio >= 0.55) cardSeen.add(e.target); else cardSeen.delete(e.target); });
+      schedule();
+    }, { threshold: [0, 0.55, 0.9] });
+    cards.forEach(function (el) { cio.observe(el); });
+    w.addEventListener('scroll', schedule, { passive: true });
+    w.addEventListener('resize', schedule);
+    d.querySelectorAll('.carousel-track').forEach(function (tr) { tr.addEventListener('scroll', schedule, { passive: true }); });
+    if (fine) d.addEventListener('mouseover', function (e) {
+      var f = e.target.closest ? e.target.closest('.film') : null;
+      var el = f ? f.querySelector('.live[data-live]') : null;
+      if (el !== hovered) { hovered = el; clearTimeout(pickT); pickT = setTimeout(applyCard, el ? 140 : 600); }
+    });
+  }
+
+  // Pause / play every film on the site — required for motion that starts on
+  // its own (WCAG 2.2.2), and remembered between pages.
+  var motion = [].slice.call(d.querySelectorAll('[data-motion]'));
+  function paintMotion() {
+    motion.forEach(function (b) {
+      b.setAttribute('aria-pressed', paused ? 'true' : 'false');
+      b.classList.toggle('is-paused', paused);
+      var t = b.getAttribute(paused ? 'data-off' : 'data-on');
+      var l = b.querySelector('.motion-label');
+      if (l) l.textContent = t;
+      b.title = t;
+    });
+  }
+  if (!liveOff && (stages.length || cards.length)) {
+    motion.forEach(function (b) {
+      b.hidden = false;
+      b.addEventListener('click', function () {
+        paused = !paused;
+        try { localStorage.setItem(PKEY, paused ? '1' : '0'); } catch (e) {}
+        paintMotion();
+        if (paused) { stages.forEach(function (el) { unmount(el); }); if (activeCard) unmount(activeCard); activeCard = null; }
+        else { stageSeen.forEach(mount); applyCard(); }
+      });
+    });
+    paintMotion();
+  }
+
+  // A film page's stage: the muted preview gives way to the full film, with
+  // sound and controls, in the same frame.
+  d.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-play-film]') : null;
+    if (!b) return;
+    e.preventDefault();
+    var box = d.getElementById(b.getAttribute('aria-controls'));
+    if (!box) return;
+    box.setAttribute('data-live-off', '');
+    unmount(box, true);
+    stageSeen.delete(box);
+    var id = b.getAttribute('data-play-film');
+    var f = d.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.allowFullscreen = true;
+    f.title = (d.querySelector('.film-h1') || {}).textContent || 'Film';
+    box.appendChild(f);
+    box.classList.add('is-player');
+    b.hidden = true;
+  });
 
   /* ---------------------------------------------------------------
      10. Lightbox, film facades, filters, forms.
@@ -358,7 +518,12 @@
     if (!a) return;
     e.preventDefault();
     var frame = a.querySelector('.film-frame');
-    if (frame.querySelector('iframe')) return;
+    if (frame.classList.contains('is-player')) return;
+    frame.setAttribute('data-live-off', '');
+    unmount(frame, true);
+    cardSeen.delete(frame);
+    if (activeCard === frame) activeCard = null;
+    frame.classList.add('is-player');
     var ifr = d.createElement('iframe');
     ifr.src = 'https://www.youtube-nocookie.com/embed/' + a.getAttribute('data-yt') + '?autoplay=1&rel=0&modestbranding=1';
     ifr.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';

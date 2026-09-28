@@ -116,10 +116,6 @@ em { font-style: normal; color: var(--ox); }
 /* hero */
 .hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; padding: 140px 0 48px; overflow: hidden; isolation: isolate; }
 .hero-media { position: absolute; inset: 0; z-index: -2; background: #000 center/cover no-repeat; }
-.hero-media iframe { opacity: 0; transition: opacity 1.2s ease .4s; background: #000; }
-.hero-media.is-live iframe { opacity: 1; }
-.hero-media iframe, .hero-media video { position: absolute; top: 50%; left: 50%; width: 100vw; height: 56.25vw; min-width: 177.78vh; min-height: 100vh; transform: translate(-50%, -50%); pointer-events: none; border: 0; object-fit: cover; }
-.hero-media video { width: 100%; height: 100%; min-width: 0; min-height: 0; top: 0; left: 0; transform: none; }
 .hero-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11,11,13,.55) 0%, rgba(11,11,13,.15) 35%, rgba(11,11,13,.35) 65%, rgba(11,11,13,.94) 100%); }
 .hero .label { margin-bottom: 22px; }
 .hero .display { font-size: clamp(2.8rem, 8.2vw, 7.6rem); font-weight: 500; line-height: .98; letter-spacing: -.035em; max-width: 12ch; margin: 0 0 22px; text-wrap: balance; }
@@ -868,3 +864,95 @@ a.vframe .play { position: absolute; inset: 0; margin: auto; }
 .post-body > .wrap + .wrap { margin-top: clamp(20px, 2.4vw, 34px); }
 .post-body h2 { margin-bottom: 14px; }
 .link.back { display: inline-block; margin-bottom: 22px; }
+
+/* =========================================================
+   LIVE FILMS — every film plays, muted, while it is on screen.
+   site.js mounts the player and adds .is-live once frames are
+   really moving; until then the still holds the frame.
+   ========================================================= */
+.live { position: relative; overflow: hidden; background: #000; }
+.live > iframe, .live > video, .live > .live-yt {
+  position: absolute; top: 50%; left: 50%; width: 100%; height: 100%;
+  transform: translate(-50%, -50%) scale(1.015);
+  border: 0; pointer-events: none; opacity: 0;
+  transition: opacity .9s var(--ease);
+}
+.live > video { object-fit: cover; }
+.live.is-live > iframe, .live.is-live > video { opacity: 1; }
+.live > .live-poster { transition: opacity .9s var(--ease); }
+.film-frame.live > .live-poster { transition: opacity .9s var(--ease), scale 1.2s var(--ease); }
+.live.is-live > .live-poster { opacity: 0; }
+.film .play { transition: background .2s, border-color .2s, opacity .5s, transform .5s var(--ease); }
+.film .live.is-live .play { opacity: 0; transform: scale(.85); }
+.film:hover .live.is-live .play { opacity: 1; transform: none; }
+
+/* cover: a 16:9 (or 9:16) film filling a box of any shape, cropped not boxed */
+.live-cover { position: absolute; inset: 0; container-type: size; }
+.live-cover > .live-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.live-cover > iframe, .live-cover > .live-yt { width: max(100cqw, 177.78cqh); height: max(100cqh, 56.25cqw); }
+.live-cover.is-v > iframe, .live-cover.is-v > .live-yt { width: max(100cqw, 56.25cqh); height: max(100cqh, 177.78cqw); }
+.live-cover > video { width: 100%; height: 100%; transform: translate(-50%, -50%); }
+
+/* a player the visitor asked for, with sound: takes the frame over */
+.live.is-player > iframe { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); z-index: 2; }
+.live.is-player > .live-poster, .live.is-player .play { opacity: 0; }
+
+/* ---- the pause control: a quiet icon in the header, every page ---- */
+.motion {
+  margin-inline-start: auto; flex: none; position: relative;
+  display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  border-radius: 50%; border: 1px solid var(--line-2); background: transparent;
+  color: var(--bone-2); cursor: pointer; transition: color .2s, border-color .2s;
+}
+.motion:hover, .motion:focus-visible { color: var(--bone); border-color: var(--bone); }
+.motion[hidden] { display: none; }
+.motion + .nav-toggle { margin-inline-start: 4px; }
+.motion-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.motion-icon { position: relative; width: 10px; height: 10px; }
+.motion-icon::before, .motion-icon::after { content: ""; position: absolute; top: 0; width: 3px; height: 10px; background: currentColor; }
+.motion-icon::before { left: 1px; }
+.motion-icon::after { right: 1px; }
+.motion.is-paused .motion-icon::before { left: 2px; width: 0; height: 0; background: none; border-style: solid; border-width: 5px 0 5px 8px; border-color: transparent transparent transparent currentColor; }
+.motion.is-paused .motion-icon::after { display: none; }
+
+/* ---- FILM PAGE — the title, the film playing, then everything about it ---- */
+.film-hero { padding: clamp(92px, 9vw, 122px) 0 clamp(40px, 5vw, 72px); }
+.film-hero-grid { display: grid; grid-template-areas: "head" "stage" "body"; row-gap: clamp(22px, 3vw, 36px); }
+.film-hero:not(.is-v) .film-hero-grid { max-width: calc(64vh * 16 / 9); margin-inline: auto; }
+.film-head { grid-area: head; }
+.film-body { grid-area: body; }
+.stage { grid-area: stage; position: relative; }
+.stage > .live { width: 100%; aspect-ratio: 16 / 9; }
+.stage.is-v > .live { width: min(100%, calc(min(76vh, 800px) * 9 / 16)); aspect-ratio: 9 / 16; margin-inline: auto; }
+.stage.is-s > .live { width: min(100%, 76vh); aspect-ratio: 1 / 1; margin-inline: auto; }
+.stage > .live > .live-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stage-play { position: absolute; z-index: 3; inset-inline-start: clamp(16px, 2vw, 28px); bottom: clamp(16px, 2vw, 28px); text-shadow: 0 1px 14px rgba(0, 0, 0, .55); }
+.stage-play[hidden] { display: none; }
+.stage.is-v .stage-play { inset-inline-start: 50%; transform: translateX(-50%); white-space: nowrap; }
+[dir="rtl"] .stage.is-v .stage-play { transform: translateX(50%); }
+@media (min-width: 900px) {
+  .film-hero.is-v .film-hero-grid { grid-template-columns: calc(min(76vh, 800px) * 9 / 16) minmax(0, 1fr); grid-template-areas: "stage head" "stage body"; grid-template-rows: auto 1fr; column-gap: clamp(40px, 5vw, 88px); align-items: start; }
+  .film-hero.is-v .stage > .live { width: 100%; }
+  .film-hero.is-v .film-body { align-self: start; }
+}
+.film-back { display: inline-block; text-decoration: none; }
+.film-back::before { content: "\2190"; margin-inline-end: 10px; }
+[dir="rtl"] .film-back::before { content: "\2192"; }
+.lang-en .film-h1, .lang-fa .film-h1 { font-size: clamp(1.9rem, 3.6vw, 3.4rem); line-height: 1; letter-spacing: -.03em; margin: 16px 0 0; text-wrap: balance; }
+.lang-fa .film-h1 { letter-spacing: 0; line-height: 1.3; }
+.film-body .lead { max-width: 62ch; margin-top: 0; }
+.film-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(138px, 1fr)); gap: 18px 28px; margin: 28px 0 22px; padding: 22px 0; border-block: 1px solid var(--line); }
+.film-facts dt { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--bone-3); }
+.lang-fa .film-facts dt { letter-spacing: 0; font-size: .8rem; }
+.film-facts dd { margin: 6px 0 0; color: var(--bone); }
+.film-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
+.chip-static { cursor: default; pointer-events: none; }
+.film-pager { display: flex; justify-content: space-between; gap: 24px; padding-block: clamp(32px, 4vw, 56px); border-top: 1px solid var(--line); }
+.film-pager a { display: grid; gap: 8px; max-width: 46%; color: var(--bone); text-decoration: none; }
+.film-pager a:hover .film-pager-t { text-decoration: underline; text-underline-offset: 4px; }
+.film-pager-next { text-align: end; margin-inline-start: auto; }
+.film-pager-t { font-size: clamp(1rem, 1.6vw, 1.3rem); }
+
+@media (prefers-reduced-motion: reduce) {
+  .live > iframe, .live > video, .live > .live-poster { transition: none; }
+}
