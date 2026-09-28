@@ -5,6 +5,14 @@ const path = require('path');
 
 const SITE = 'https://cinematicclinic.com';
 const OUT = path.join(__dirname, 'dist');
+// /assets/ is cached for a week (vercel.json), so every CSS/JS URL carries a hash
+// of its file: a deploy that changes a file changes its URL, and nobody gets
+// yesterday's stylesheet with today's page.
+const ASSET_V = {};
+const asset = (name) => {
+  if (!ASSET_V[name]) ASSET_V[name] = require('crypto').createHash('sha1').update(fs.readFileSync(path.join(__dirname, 'static', name))).digest('hex').slice(0, 10);
+  return `/assets/${name}?v=${ASSET_V[name]}`;
+};
 const videos = require('./content/videos.json');
 // Blog posts. Empty is a valid state: the index renders its empty note, nothing
 // is added to the nav, the sitemap or the feed, and no dead link ever ships.
@@ -99,11 +107,11 @@ function write(rel, content) {
 
 function fonts(lang) {
   return lang === 'fa'
-    ? 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=Archivo:wght@400;500;600&display=swap'
-    : 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&display=swap';
+    ? 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@200;300;400;500;600;700;800&family=Archivo:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap'
+    : 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Instrument+Serif:ital@0;1&display=swap';
 }
 
-function layout(lang, page, { title, desc, body, schema, ogImage, ogType, noindex }) {
+function layout(lang, page, { title, desc, body, schema, ogImage, ogType, noindex, head, bodyAttr }) {
   const c = LANGS[lang];
   const other = lang === 'en' ? 'fa' : 'en';
   const canonical = abs(lang, page);
@@ -148,10 +156,11 @@ function layout(lang, page, { title, desc, body, schema, ogImage, ogType, noinde
 <link rel="preconnect" href="https://www.youtube-nocookie.com">
 <link rel="preconnect" href="https://www.youtube.com">
 <link rel="stylesheet" href="${fonts(lang)}">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="${asset('site.css')}">
+${head || ''}
 ${ld}
 </head>
-<body class="lang-${lang} page-${page.split('/')[0]}${page.includes('/') ? ' page-film' : ''}">
+<body class="lang-${lang} page-${page.split('/')[0]}${page.includes('/') ? ' page-film' : ''}"${bodyAttr || ''}>
 <a class="skip" href="#main">${esc(c.ui.skip)}</a>
 <div class="curtain" aria-hidden="true"><span class="curtain-mark">CC</span></div>
 <header class="top">
@@ -197,7 +206,7 @@ ${body}
   </div>
 </footer>
 </div>
-<script src="/assets/site.js" defer></script>
+<script src="${asset('site.js')}" defer></script>
 </body>
 </html>`;
 }
@@ -440,66 +449,60 @@ function verticalStrip(lang, h) {
 }
 
 R.home = (lang) => {
-  const c = LANGS[lang], h = c.home;
-  const hero = videos.find((v) => v.id === HERO_ID);
-  const heroTitle = lang === 'fa' ? hero.title_fa : hero.title;
-  // The hero IS the hero film — Shahab's pick in the sorter — playing from the
-  // first frame the page can show. Its still is the LCP image and holds the
-  // screen until the film is really moving, then dissolves into it.
-  const media = `<div class="live live-cover"${liveAttrs(hero)} data-eager><img class="live-poster" src="${POSTER(hero, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(HERO_ID)}'" alt="" width="1280" height="720" fetchpriority="high" aria-hidden="true"></div>`;
-  // This is a portfolio home page: the films carry it, the copy gets out of the
-  // way. Everything that used to be a paragraph here — the manifesto, the
-  // positioning essay, the process steps, the FAQ — belongs on the service pages
-  // and the blog, where a reader who wants it goes looking for it.
-  // Both rails are exactly what Shahab marked HOME in the sorter — 8 wide and
-  // 30 tall — not a slice of the catalogue. No cap: the count is the curation.
-  const wide = pick({ place: 'home', orient: 'h', exclude: [HERO_ID, BAND_ID] });
-  const tall = pick({ place: 'home', orient: 'v', exclude: [HERO_ID, BAND_ID] });
+  const c = LANGS[lang], h = c.home, ap = c.ap;
+  const reel = require('./content/reel.json');
+  const pick2 = (o) => (o && typeof o === 'object' ? o[lang] || o.en : o);
+  const films = reel.films.map((f) => ({ slug: f.slug, orient: f.orient, title: pick2(f.title), client: pick2(f.client), cat: pick2(f.cat), video: f.video, poster: f.poster }));
+  const abs2 = (p) => (/^(https?:)?\//.test(p) ? p : reel.base + p);
+  const num = (n) => (lang === 'fa' ? FA_DIGITS(String(n).padStart(2, '0')) : String(n).padStart(2, '0'));
+  const cfg = { base: reel.base, lang, ui: { watch: ap.watch, close: ap.close }, films };
+  // The scene decides for itself whether it can run. Until it has, the page
+  // assumes it will (no flash of the fallback grid) — unless reduced motion is
+  // on, or the module has not started within four seconds.
+  const head = `<script>(function(d){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('ap-js');setTimeout(function(){if(!document.querySelector('.ap-live,.ap-static'))d.classList.remove('ap-js')},4000)})(document.documentElement)</script>
+<link rel="preconnect" href="${reel.base.replace(/^(https?:\/\/[^/]+).*$/, '$1')}" crossorigin>
+<link rel="modulepreload" href="${asset('aperture.js')}">`;
   const body = `
-<section class="hero">
-  <div class="hero-media" data-title="${esc(heroTitle)}">${media}</div>
-  <div class="hero-shade"></div>
-  <div class="hero-grain" aria-hidden="true"></div>
-  <div class="wrap reveal in">
-    <span class="label">${esc(h.eyebrow)}</span>
-    <p class="display">${md(h.tagline)}</p>
-    <h1>${esc(h.h1)}</h1>
-    <div class="hero-foot">
-      <div class="cta-row"><a class="btn" href="${url(lang, 'contact')}">${esc(h.cta1)}</a><button class="play-btn" type="button" data-lightbox="${HERO_ID}"><span class="ring" aria-hidden="true"></span><span>${esc(h.watch)}</span></button></div>
-      <span class="scroll-hint" aria-hidden="true">${esc(h.scroll)}</span>
+<section class="ap" data-aperture aria-label="${esc(ap.reel)}">
+  <script type="application/json">${JSON.stringify(cfg).replace(/</g, '\\u003c')}</script>
+  <div class="ap-hero">
+    <h1 class="ap-name">${esc(ap.h1)}</h1>
+    <p class="ap-line"><span>${esc(ap.tagline)}</span><span class="ap-sub">${esc(ap.sub)}</span></p>
+  </div>
+  <div class="ap-track" style="--ap-n:${films.length}">
+    <div class="ap-stage">
+      <canvas class="ap-canvas" aria-hidden="true"></canvas>
+      <span class="ap-scroll" aria-hidden="true">${esc(ap.scroll)}</span>
+      <div class="ap-caption" aria-live="polite">
+        <span class="ap-count"></span>
+        <h2 class="ap-title"></h2>
+        <p class="ap-meta"></p>
+        <button class="ap-watch play-btn" type="button" data-ap-play="0"><span class="ring" aria-hidden="true"></span><span>${esc(ap.watch)}</span></button>
+      </div>
+      <nav class="ap-rail" aria-label="${esc(ap.rail)}">${films.map((f, i) => `<button type="button" aria-current="${i === 0}"><span class="ap-tick" aria-hidden="true"></span><span class="ap-rail-t"><span dir="ltr">${num(i + 1)}</span> ${esc(f.title)}</span></button>`).join('')}</nav>
+      <p class="ap-endline" aria-hidden="true">${esc(ap.end)}</p>
     </div>
   </div>
+  <ol class="ap-grid wrap">${films.map((f, i) => `<li><button type="button" class="ap-card${f.orient === 'v' ? ' is-v' : ''}" data-ap-play="${i}"><img src="${abs2(f.poster)}" alt="" loading="lazy" width="${f.orient === 'v' ? 720 : 1280}" height="${f.orient === 'v' ? 1280 : 720}"><span class="ap-card-t">${esc(f.title)}</span><span class="ap-card-m">${esc(f.client)} · ${esc(f.cat)}</span></button></li>`).join('')}</ol>
+  <div class="ap-cinema" hidden role="dialog" aria-modal="true" aria-label="${esc(ap.reel)}">
+    <video playsinline controls preload="none"></video>
+    <p class="ap-cinema-title"></p>
+    <button class="ap-cinema-close" type="button">${esc(ap.close)}</button>
+  </div>
 </section>
-${filmBand(lang, h)}
-<section class="section rule"><div class="wrap">
-  ${filmHead(h.bandEyebrow, h.selectedTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a>`)}
-  ${wideStack(lang, wide)}
-</div></section>
-<section class="section">
-  <div class="wrap">${filmHead(h.vertEyebrow, h.vertTitle)}</div>
-  ${carousel(lang, tall, c.ui)}
+<section class="ap-after">
+  <div class="wrap">
+    <span class="label">${esc(ap.services)}</span>
+    <ol class="ap-services">${h.offers.map((o, i) => `<li><a href="${url(lang, o.page)}"><span class="ap-s-n" dir="ltr">${num(i + 1)}</span><span class="ap-s-t">${esc(o.t)}</span><span class="ap-s-d">${esc(o.d)}</span></a></li>`).join('')}</ol>
+    <p class="ap-all"><a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a></p>
+  </div>
 </section>
-<section class="section"><div class="wrap narrow reveal">
+${cta(lang, h.cta)}
+<section class="section ap-entity"><div class="wrap narrow">
   <p class="entity">${md(h.line)}</p>
 </div></section>
-<section class="section proof"><div class="wrap proof-row">
-  <div class="reveal">${photo('shahab-rig', c.media.rig, 800, 879, 'photo proof-img')}</div>
-  <div class="reveal" data-delay="1">
-    <span class="label ox">${esc(c.media.proofLabel)}</span>
-    <h2>${md(c.media.proofTitle)}</h2>
-  </div>
-</div></section>
-<section class="marquee" aria-hidden="true"><div class="marquee-track">${[0, 1].map(() => h.marquee.map((m) => `<span>${esc(m)}</span>`).join('')).join('')}</div></section>
-<section class="section"><div class="wrap">
-  <div class="section-head reveal"><h2>${esc(h.offersTitle)}</h2></div>
-  ${cards(lang, h.offers)}
-</div></section>
-<section class="section"><div class="wrap">
-  <div class="section-head reveal"><h2>${esc(h.numbersTitle)}</h2></div>
-  ${stats(c.stats)}
-</div></section>
-${cta(lang, h.cta)}`;
-  return { title: h.title, desc: h.metaDesc, body, schema: [orgSchema(lang), personSchema(lang), websiteSchema(lang), faqSchema(h.faq), breadcrumb(lang, 'home', c.ui.home)] };
+<script type="module" src="${asset('aperture.js')}"></script>`;
+  return { title: h.title, desc: h.metaDesc, body, head, bodyAttr: ' data-native-scroll', ogImage: abs2(reel.films[0].poster), schema: [orgSchema(lang), personSchema(lang), websiteSchema(lang), breadcrumb(lang, 'home', c.ui.home)] };
 };
 
 R.work = (lang) => {
