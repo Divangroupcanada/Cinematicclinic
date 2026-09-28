@@ -200,28 +200,38 @@ function boot(root) {
       return c.setHSL(hsl.h, Math.min(1, hsl.s * 1.6 + 0.08), Math.min(0.5, hsl.l * 0.9 + 0.05));
     } catch (e) { return new Color(0.2, 0.2, 0.2); }
   }
-  function wantVideo(m, on) {
+  // Video per film, in three states: none; warm (metadata and one frame, so the film is
+  // already there when you arrive); hot (buffering to play). The films are full-length
+  // masters, so only the one in focus is allowed to stream.
+  function wantVideo(m, level) {
     const u = m.userData;
-    if (on && !u.video) {
+    if (level > 0 && !u.video) {
       const v = document.createElement('video');
       v.crossOrigin = 'anonymous'; v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
-      v.setAttribute('playsinline', ''); v.setAttribute('muted', ''); v.preload = 'auto';
+      v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+      v.preload = level > 1 ? 'auto' : 'metadata';
       v.src = src(films[u.i].video);
-      v.addEventListener('loadedmetadata', () => { try { v.currentTime = Math.min(2.5, (v.duration || 0) * 0.1); } catch (e) {} }, { once: true });
-      v.addEventListener('loadeddata', () => {
-        if (u.video !== v) return;
+      let swapped = false;
+      // the still holds until a real frame from inside the film is ready — never a black first frame
+      const swap = () => {
+        if (swapped || u.video !== v || v.readyState < 2 || v.currentTime < 0.05) return;
+        swapped = true;
         const t = new VideoTexture(v); t.colorSpace = NoColorSpace; t.minFilter = LinearFilter; t.generateMipmaps = false;
         u.vtex = t; m.material.uniforms.uMap.value = t; u.ready = 1;
         if (u.i === 0) firstFrame();
-      }, { once: true });
+      };
+      v.addEventListener('loadedmetadata', () => { try { v.currentTime = Math.min(2.5, (v.duration || 0) * 0.1); } catch (e) {} }, { once: true });
+      v.addEventListener('seeked', swap);
+      v.addEventListener('timeupdate', swap);
       u.video = v;
-    } else if (!on && u.video) {
+    } else if (level === 0 && u.video) {
       const v = u.video; u.video = null;
       v.pause(); v.removeAttribute('src'); try { v.load(); } catch (e) {}
       if (u.vtex) { u.vtex.dispose(); u.vtex = null; }
       m.material.uniforms.uMap.value = u.poster && typeof u.poster === 'object' ? u.poster : null;
       u.ready = m.material.uniforms.uMap.value ? 1 : 0;
     }
+    if (u.video && level > 1 && u.video.preload !== 'auto') u.video.preload = 'auto';
   }
 
   // ---------------------------------------------------------------- scroll → reel position
@@ -385,7 +395,7 @@ function boot(root) {
       u.uFogNear.value = D + 2.5; u.uFogFar.value = D + 13.5;
       if (d < 3.5) loadPoster(m);
       else if (d > 6.5) dropPoster(m);                        // phones have little GPU memory: keep only the stills nearby
-      wantVideo(m, d < 1.6);
+      wantVideo(m, d < 0.6 ? 2 : d < (camera.aspect < 0.9 ? 1.1 : 1.6) ? 1 : 0);
       const vid = m.userData.video;
       if (vid) {
         if (i === near && !cinema.isOpen() && document.visibilityState === 'visible') { if (vid.paused) vid.play().catch(() => {}); }
@@ -451,7 +461,7 @@ function boot(root) {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') stop(); else if (track.getBoundingClientRect().bottom > 0 && track.getBoundingClientRect().top < innerHeight) start(); });
   cinema.onChange((isOpen) => { if (isOpen) planes.forEach((m) => m.userData.video && m.userData.video.pause()); });
   loadPoster(planes[0]);
-  wantVideo(planes[0], true);
+  wantVideo(planes[0], 2);
   if (N > 1) loadPoster(planes[1]);
 }
 
