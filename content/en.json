@@ -838,5 +838,17 @@
       "text": "Tell me about the clinic and what it needs to say. I will come back with a plan and a shoot date.",
       "button": "Start a project"
     }
+  },
+  "ap": {
+    "h1": "Shahab Balamchi",
+    "tagline": "Cinema for clinics.",
+    "sub": "Clinic filmmaker · Toronto",
+    "scroll": "Scroll",
+    "watch": "Watch with sound",
+    "close": "Close",
+    "reel": "Selected films",
+    "rail": "Jump to a film",
+    "services": "What I make",
+    "end": "Your clinic, next."
   }
 }
