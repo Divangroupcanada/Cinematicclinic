@@ -45,7 +45,8 @@
         Touch already has its own physics; reduced-motion opts out.
      --------------------------------------------------------------- */
   var scroller = d.getElementById('scroll');
-  var smooth = !!scroller && !reduce && fine && wide();
+  // Pages that drive their own scroll-linked scene (the home reel) keep native scroll.
+  var smooth = !!scroller && !reduce && fine && wide() && !d.body.hasAttribute('data-native-scroll');
   var current = 0, target = 0, running = false;
 
   function sizeBody() {
