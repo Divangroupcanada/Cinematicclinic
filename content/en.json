@@ -14,7 +14,9 @@
     "close": "Close",
     "play": "Play",
     "prev": "Previous films",
-    "next": "More films"
+    "next": "More films",
+    "pauseFilms": "Pause films",
+    "playFilms": "Play films"
   },
   "nav": {
     "work": "Films",
@@ -771,5 +773,83 @@
       "text": "One message is enough to start.",
       "button": "Work with me"
     }
+  },
+  "film": {
+    "kind": {
+      "testimonial": "patient testimonial",
+      "bts": "behind-the-scenes film",
+      "informative": "explainer",
+      "branding": "brand film",
+      "procedure": "treatment film"
+    },
+    "catKind": {
+      "Brand Film": "brand film",
+      "Practitioner": "practitioner film",
+      "Training": "training film",
+      "Behind the Scenes": "behind-the-scenes film",
+      "_": "clinic film"
+    },
+    "cinematic": "cinematic",
+    "descFor": "for",
+    "credit": "Directed by Shahab Balamchi, a Divan Group production.",
+    "creditBts": "Behind the scenes on a Divan Group shoot.",
+    "purpose": {
+      "Brand Film": "A brand film sells the clinic before anyone books: the space, the team, the feeling of walking in.",
+      "Practitioner": "It puts the person a patient is deciding to trust in front of the camera.",
+      "Injectables": "It shows the treatment calmly and precisely, so a patient knows what to expect before the first appointment.",
+      "Facial": "It shows the treatment step by step, the way it actually feels on the table.",
+      "Laser": "It shows the device, the session and the care around it, without the clinical coldness.",
+      "Head Spa": "It is slow on purpose: sound, texture and stillness do the selling.",
+      "Brows": "It is all detail: the mapping, the precision, the finished line.",
+      "Training": "It documents the course so the next cohort can see exactly what they would learn.",
+      "Behind the Scenes": "How a clinic shoot actually runs, from the lighting to the last take."
+    },
+    "tags": {
+      "cinematic": "Cinematic",
+      "branding": "Branding",
+      "informative": "Informative",
+      "procedure": "Procedure",
+      "testimonial": "Testimonial",
+      "bts": "Behind the scenes"
+    },
+    "facts": {
+      "clinic": "Clinic",
+      "category": "Category",
+      "format": "Format",
+      "runtime": "Runtime",
+      "published": "Published",
+      "direction": "Direction",
+      "production": "Production"
+    },
+    "horizontal": "horizontal",
+    "vertical": "vertical",
+    "square": "square",
+    "director": "Shahab Balamchi",
+    "playSound": "Play with sound",
+    "youtube": "Watch on YouTube",
+    "all": "All films",
+    "moreTitle": "Keep watching",
+    "prev": "Previous film",
+    "next": "Next film",
+    "pagerLabel": "More films",
+    "titleSuffix": " | Cinematic Clinic",
+    "cta": {
+      "title": "Want a film like this for **your** clinic?",
+      "text": "Tell me about the clinic and what it needs to say. I will come back with a plan and a shoot date.",
+      "button": "Start a project"
+    }
+  },
+  "ap": {
+    "h1": "Shahab Balamchi",
+    "tagline": "Cinema for clinics.",
+    "sub": "Clinic filmmaker · Toronto",
+    "scroll": "Scroll",
+    "watch": "Watch with sound",
+    "close": "Close",
+    "reel": "Selected films",
+    "rail": "Jump to a film",
+    "services": "What I make",
+    "end": "Your clinic, next.",
+    "cursor": "Watch"
   }
 }

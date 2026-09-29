@@ -5,6 +5,14 @@ const path = require('path');
 
 const SITE = 'https://cinematicclinic.com';
 const OUT = path.join(__dirname, 'dist');
+// /assets/ is cached for a week (vercel.json), so every CSS/JS URL carries a hash
+// of its file: a deploy that changes a file changes its URL, and nobody gets
+// yesterday's stylesheet with today's page.
+const ASSET_V = {};
+const asset = (name) => {
+  if (!ASSET_V[name]) ASSET_V[name] = require('crypto').createHash('sha1').update(fs.readFileSync(path.join(__dirname, 'static', name))).digest('hex').slice(0, 10);
+  return `/assets/${name}?v=${ASSET_V[name]}`;
+};
 const videos = require('./content/videos.json');
 // Blog posts. Empty is a valid state: the index renders its empty note, nothing
 // is added to the nav, the sitemap or the feed, and no dead link ever ships.
@@ -39,6 +47,50 @@ const TAGGED = (v, tag) => (v.tags || []).includes(tag);
 // rendered, counted, put in a schema or written to llms.txt.
 const live = videos.filter((v) => v.place !== 'hidden');
 
+// ---------- live film ----------
+// Every film on the site is a real film that plays, muted, while it is on
+// screen (static/site.js does the playing). The build only decides WHICH film
+// and FROM WHERE: past the opening titles on anything long enough to have them,
+// and one second short of the end so YouTube's end screen never shows.
+const SECS = (d) => { const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(d || ''); return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0; };
+const START = (v) => { const t = SECS(v.dur); return t > 20 ? Math.min(Math.round(t * 0.18), 12) : 0; };
+// A self-hosted cut beats YouTube whenever one exists — drop
+// static/films/<id>.mp4 (and <id>.jpg for its poster) and the markup switches.
+// Nothing else changes.
+const LOCAL = (id, ext) => fs.existsSync(path.join(__dirname, 'static', 'films', id + '.' + (ext || 'mp4')));
+const liveAttrs = (v) => ` data-live="${v.id}" data-start="${START(v)}" data-end="${Math.max(SECS(v.dur) - 1, 0)}"${LOCAL(v.id) ? ` data-src="/assets/films/${v.id}.mp4"` : ''}`;
+const POSTER = (v, q) => (LOCAL(v.id, 'jpg') ? `/assets/films/${v.id}.jpg` : YT_IMG(v.id, q));
+
+// ---------- one page per film ----------
+// A film gets its own page when its title and clinic say something no other
+// page says. Twenty clips all called "Cosmetic Clinic Brand Film — Divan Group"
+// would be twenty near-identical pages, so a repeated title+clinic gets ONE
+// page, for its best-ranked film; the others still play wherever they are
+// listed and open in the lightbox.
+const slugify = (s) => String(s).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' and ').replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const FILM_SLUG = new Map();
+{
+  const firsts = [];
+  const seen = new Set();
+  // Checked in both languages: "Cheek Filler" and "Cheek Fillers" are two
+  // English titles but one Farsi title, and one film.
+  [...live].sort(byRank).forEach((v) => {
+    const k = v.title + '|' + (v.venue || ''), kf = 'fa:' + v.title_fa + '|' + (v.venue_fa || '');
+    if (!seen.has(k) && !seen.has(kf)) { seen.add(k); seen.add(kf); firsts.push(v); }
+  });
+  const base = new Map();
+  firsts.forEach((v) => base.set(slugify(v.title), (base.get(slugify(v.title)) || 0) + 1));
+  const used = new Set();
+  firsts.forEach((v) => {
+    let s = slugify(v.title);
+    if (base.get(s) > 1 && v.venue) s += '-' + slugify(v.venue.split(',')[0]);
+    if (used.has(s)) s += '-' + v.id.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5);
+    used.add(s);
+    FILM_SLUG.set(v.id, s);
+  });
+}
+const filmPage = (v) => (FILM_SLUG.has(v.id) ? 'work/' + FILM_SLUG.get(v.id) : null);
+
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
 const paras = (arr) => arr.map((p) => `<p>${md(p)}</p>`).join('\n');
@@ -55,11 +107,11 @@ function write(rel, content) {
 
 function fonts(lang) {
   return lang === 'fa'
-    ? 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=Archivo:wght@400;500;600&display=swap'
-    : 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&display=swap';
+    ? 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@200;300;400;500;600;700;800&family=Archivo:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap'
+    : 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Instrument+Serif:ital@0;1&display=swap';
 }
 
-function layout(lang, page, { title, desc, body, schema, ogImage, noindex }) {
+function layout(lang, page, { title, desc, body, schema, ogImage, ogType, noindex, head, bodyAttr }) {
   const c = LANGS[lang];
   const other = lang === 'en' ? 'fa' : 'en';
   const canonical = abs(lang, page);
@@ -82,7 +134,7 @@ function layout(lang, page, { title, desc, body, schema, ogImage, noindex }) {
 <meta name="theme-color" content="#0B0B0D">
 <meta name="color-scheme" content="dark">
 <meta name="format-detection" content="telephone=no">
-<meta property="og:type" content="website">
+<meta property="og:type" content="${ogType || 'website'}">
 <meta property="og:site_name" content="Cinematic Clinic">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
@@ -101,19 +153,23 @@ function layout(lang, page, { title, desc, body, schema, ogImage, noindex }) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com">
+<link rel="preconnect" href="https://www.youtube-nocookie.com">
+<link rel="preconnect" href="https://www.youtube.com">
 <link rel="stylesheet" href="${fonts(lang)}">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="${asset('site.css')}">
+${head || ''}
 ${ld}
 </head>
-<body class="lang-${lang} page-${page}">
+<body class="lang-${lang} page-${page.split('/')[0]}${page.includes('/') ? ' page-film' : ''}"${bodyAttr || ''}>
 <a class="skip" href="#main">${esc(c.ui.skip)}</a>
 <div class="curtain" aria-hidden="true"><span class="curtain-mark">CC</span></div>
 <header class="top">
   <div class="wrap top-row">
     <a class="brand" href="${url(lang, 'home')}" aria-label="Cinematic Clinic"><span class="brand-mark">CC</span><span class="brand-name">Cinematic Clinic</span></a>
+    <button class="motion" type="button" data-motion aria-pressed="false" data-on="${esc(c.ui.pauseFilms)}" data-off="${esc(c.ui.playFilms)}" title="${esc(c.ui.pauseFilms)}" hidden><span class="motion-icon" aria-hidden="true"></span><span class="motion-label">${esc(c.ui.pauseFilms)}</span></button>
     <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="${esc(c.ui.menu)}"><span></span><span></span></button>
     <nav id="nav" class="nav">
-      ${navItems.filter((p) => p !== 'blog' || posts.length).map((p) => `<a href="${url(lang, p)}"${p === page ? ' aria-current="page"' : ''}>${esc(c.nav[p])}</a>`).join('')}
+      ${navItems.filter((p) => p !== 'blog' || posts.length).map((p) => `<a href="${url(lang, p)}"${p === page.split('/')[0] ? ' aria-current="page"' : ''}>${esc(c.nav[p])}</a>`).join('')}
       <a class="lang" href="${url(other, page)}" lang="${other}" hreflang="${other}">${esc(c.nav.lang)}</a>
       <a class="btn btn-small" href="${url(lang, 'contact')}">${esc(c.nav.contact)}</a>
     </nav>
@@ -150,7 +206,7 @@ ${body}
   </div>
 </footer>
 </div>
-<script src="/assets/site.js" defer></script>
+<script src="${asset('site.js')}" defer></script>
 </body>
 </html>`;
 }
@@ -223,16 +279,24 @@ function serviceSchema(lang, page, name, desc) {
 }
 function videoSchema(lang, v) {
   const title = lang === 'fa' ? v.title_fa : v.title;
+  const page = filmPage(v);
+  const venue = lang === 'fa' ? v.venue_fa : v.venue;
+  const city = (v.venue || '').match(/(Toronto|Montr[ée]al|Dubai)$/);
   return {
+    '@context': 'https://schema.org',
     '@type': 'VideoObject',
-    '@id': abs(lang, 'work') + '#' + v.id,
+    '@id': (page ? abs(lang, page) : abs(lang, 'work')) + '#' + (page ? 'video' : v.id),
     name: title,
-    description: (lang === 'fa' ? 'فیلم کلینیک زیبایی — ' : 'Cosmetic clinic film — ') + (lang === 'fa' ? v.cat_fa : v.cat) + (lang === 'fa' ? '. فیلم‌برداری شهاب بلامچی، تولید Divan Group.' : '. Filmed by Shahab Balamchi, produced by Divan Group.'),
+    description: `${filmDesc(lang, v)}. ${LANGS[lang].film.purpose[v.cat] || ''} ${IS_BTS(v) ? LANGS[lang].film.creditBts : LANGS[lang].film.credit}`.replace(/\s+/g, ' ').trim(),
     thumbnailUrl: [YT_IMG(v.id, 'maxresdefault'), YT_IMG(v.id)],
-    uploadDate: '2026-07-09',
+    uploadDate: v.date,
+    duration: v.dur,
     embedUrl: 'https://www.youtube-nocookie.com/embed/' + v.id,
     contentUrl: 'https://www.youtube.com/watch?v=' + v.id,
-    genre: v.cat,
+    genre: lang === 'fa' ? v.cat_fa : v.cat,
+    isFamilyFriendly: true,
+    ...(page ? { url: abs(lang, page) } : {}),
+    ...(city && venue && !/^Divan Group/.test(v.venue) ? { contentLocation: { '@type': 'Place', name: venue, address: { '@type': 'PostalAddress', addressLocality: city[1] } } } : {}),
     creator: { '@id': SITE + '/#shahab' },
     producer: { '@type': 'Organization', '@id': 'https://www.divangroup.ca/#organization', name: 'Divan Group' },
   };
@@ -248,10 +312,14 @@ const film = (lang, v, cls, big) => {
   const rawVen = lang === 'fa' ? v.venue_fa : v.venue;
   const ven = rawVen && !/^Divan Group|^دیوان گروپ/.test(rawVen) ? rawVen : '';
   // A full-width frame needs the 1280px still; hqdefault is 480px and goes soft.
-  const src = big ? YT_IMG(v.id, 'maxresdefault') : YT_IMG(v.id);
+  const src = big ? POSTER(v, 'maxresdefault') : POSTER(v);
   const fallback = big ? ` onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'"` : '';
-  return `<a class="film ${cls || ''}" href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" data-cat="${esc(v.cat)}" data-cursor="${esc(c0.ui.play)}" target="_blank" rel="noopener">
-  <span class="film-frame${v.orient === 'v' ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"><img src="${src}"${fallback} alt="${esc(t)}" loading="lazy" width="${big ? 1280 : 480}" height="${big ? 720 : 360}" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
+  const page = filmPage(v);
+  // With a page: a plain link to it. Without: the old behaviour — the film
+  // plays in place, with sound, where it was clicked.
+  const link = page ? `href="${url(lang, page)}" data-page` : `href="https://www.youtube.com/watch?v=${v.id}" data-yt="${v.id}" target="_blank" rel="noopener"`;
+  return `<a class="film ${cls || ''}" ${link} data-cat="${esc(v.cat)}" data-cursor="${esc(c0.ui.play)}">
+  <span class="film-frame live${v.orient === 'v' ? ' is-v' : v.orient === 's' ? ' is-s' : ''}"${liveAttrs(v)}><img class="live-poster" src="${src}"${fallback} alt="${esc(t)}" loading="lazy" width="${big ? 1280 : 480}" height="${big ? 720 : 360}" data-parallax="8"><span class="play" aria-hidden="true"></span></span>
   <span class="film-meta"><span class="film-title">${esc(t)}</span><span class="film-cat">${esc(ven ? `${cat} · ${ven}` : cat)}</span></span></a>`;
 };
 // Film blocks, shared by every page. `pick` returns films ranked best-first
@@ -317,10 +385,13 @@ const R = {};
 function filmBand(lang, h) {
   const c = LANGS[lang];
   const hasReel = fs.existsSync(path.join(__dirname, 'static', 'reel.mp4'));
-  const poster = hasReel ? '/assets/reel-poster.jpg' : YT_IMG(BAND_ID, 'maxresdefault');
+  const band = videos.find((v) => v.id === BAND_ID);
+  const poster = hasReel ? '/assets/reel-poster.jpg' : POSTER(band, 'maxresdefault');
+  // A cut reel (static/reel.mp4) still wins when it exists; until then the band
+  // is the band film itself, playing whenever the band is on screen.
   const media = hasReel
     ? `<video autoplay muted loop playsinline preload="none" poster="${poster}" aria-hidden="true" tabindex="-1"><source src="/assets/reel.webm" type="video/webm"><source src="/assets/reel.mp4" type="video/mp4"></video>`
-    : `<img src="${poster}" onerror="this.onerror=null;this.src='${YT_IMG(BAND_ID)}'" alt="" width="1280" height="720" loading="lazy" aria-hidden="true">`;
+    : `<div class="live live-cover"${liveAttrs(band)}><img class="live-poster" src="${poster}" onerror="this.onerror=null;this.src='${YT_IMG(BAND_ID)}'" alt="" width="1280" height="720" loading="lazy" aria-hidden="true"></div>`;
   return `
 <section class="band" aria-label="${esc(h.bandEyebrow)}">
   <div class="band-media">${media}</div>
@@ -378,69 +449,64 @@ function verticalStrip(lang, h) {
 }
 
 R.home = (lang) => {
-  const c = LANGS[lang], h = c.home;
-  const hero = videos.find((v) => v.id === HERO_ID);
-  const heroTitle = lang === 'fa' ? hero.title_fa : hero.title;
-  const hasMp4 = fs.existsSync(path.join(__dirname, 'static', 'hero.mp4'));
-  // Plays once on load and fades to black; the poster IS that last black frame,
-  // so there is no flash before playback and no jump when it ends.
-  const media = hasMp4
-    ? `<video autoplay muted playsinline preload="auto" poster="/assets/hero-poster.jpg" aria-hidden="true" tabindex="-1"><source src="/assets/hero.webm" type="video/webm"><source src="/assets/hero.mp4" type="video/mp4"></video>`
-    : '';
-  const mediaAttr = hasMp4 ? '' : ` data-yt="${HERO_ID}" data-title="${esc(heroTitle)}"`;
-  // This is a portfolio home page: the films carry it, the copy gets out of the
-  // way. Everything that used to be a paragraph here — the manifesto, the
-  // positioning essay, the process steps, the FAQ — belongs on the service pages
-  // and the blog, where a reader who wants it goes looking for it.
-  // Both rails are exactly what Shahab marked HOME in the sorter — 8 wide and
-  // 30 tall — not a slice of the catalogue. No cap: the count is the curation.
-  const wide = pick({ place: 'home', orient: 'h', exclude: [HERO_ID, BAND_ID] });
-  const tall = pick({ place: 'home', orient: 'v', exclude: [HERO_ID, BAND_ID] });
+  const c = LANGS[lang], h = c.home, ap = c.ap;
+  const reel = require('./content/reel.json');
+  const pick2 = (o) => (o && typeof o === 'object' ? o[lang] || o.en : o);
+  const films = reel.films.map((f) => ({ slug: f.slug, orient: f.orient, title: pick2(f.title), client: pick2(f.client), cat: pick2(f.cat), video: f.video, poster: f.poster }));
+  const abs2 = (p) => (/^(https?:)?\//.test(p) ? p : reel.base + p);
+  const num = (n) => (lang === 'fa' ? FA_DIGITS(String(n).padStart(2, '0')) : String(n).padStart(2, '0'));
+  // hovering a service brings up a still from a film of that kind
+  const PEEK = { 'clinic-film': 'roda-bath', 'doctor-series': 'baharak-wsh', 'film-week': 'clinic-vibe' };
+  const peek = (page) => { const f = reel.films.find((x) => x.slug === PEEK[page]); return f ? ` data-peek="${abs2(f.poster)}" data-peek-o="${f.orient}"` : ''; };
+  const cfg = { base: reel.base, lang, ui: { watch: ap.watch, close: ap.close, cursor: ap.cursor }, films };
+  // The scene decides for itself whether it can run. Until it has, the page
+  // assumes it will (no flash of the fallback grid) — unless reduced motion is
+  // on, or the module has not started within four seconds.
+  const head = `<script>(function(d){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('ap-js');setTimeout(function(){if(!document.querySelector('.ap-live,.ap-static'))d.classList.remove('ap-js')},4000)})(document.documentElement)</script>
+<link rel="preconnect" href="${reel.base.replace(/^(https?:\/\/[^/]+).*$/, '$1')}" crossorigin>
+<link rel="modulepreload" href="${asset('aperture.js')}">`;
   const body = `
-<section class="hero">
-  <div class="hero-media"${mediaAttr} style="background-image:url('${hasMp4 ? '/assets/hero-poster.jpg' : YT_IMG(HERO_ID, 'maxresdefault')}')">${media}</div>
-  <div class="hero-shade"></div>
-  <div class="hero-grain" aria-hidden="true"></div>
-  <div class="wrap reveal in">
-    <span class="label">${esc(h.eyebrow)}</span>
-    <p class="display">${md(h.tagline)}</p>
-    <h1>${esc(h.h1)}</h1>
-    <div class="hero-foot">
-      <div class="cta-row"><a class="btn" href="${url(lang, 'contact')}">${esc(h.cta1)}</a><button class="play-btn" type="button" data-lightbox="${HERO_ID}"><span class="ring" aria-hidden="true"></span><span>${esc(h.watch)}</span></button></div>
-      <span class="scroll-hint" aria-hidden="true">${esc(h.scroll)}</span>
+<section class="ap" data-aperture aria-label="${esc(ap.reel)}">
+  <script type="application/json">${JSON.stringify(cfg).replace(/</g, '\\u003c')}</script>
+  <div class="ap-hero">
+    <h1 class="ap-name">${esc(ap.h1)}</h1>
+    <p class="ap-line"><span>${esc(ap.tagline)}</span><span class="ap-sub">${esc(ap.sub)}</span></p>
+  </div>
+  <div class="ap-track" style="--ap-n:${films.length}">
+    <div class="ap-stage">
+      <canvas class="ap-canvas" aria-hidden="true"></canvas>
+      <div class="ap-vf" aria-hidden="true"><i class="ap-vf-c tl"></i><i class="ap-vf-c tr"></i><i class="ap-vf-c bl"></i><i class="ap-vf-c br"></i><span class="ap-vf-tc" dir="ltr">00:00:00:00</span><span class="ap-vf-ar" dir="ltr"></span></div>
+      <span class="ap-scroll" aria-hidden="true">${esc(ap.scroll)}</span>
+      <div class="ap-caption" aria-live="polite">
+        <span class="ap-count"></span>
+        <h2 class="ap-title"></h2>
+        <p class="ap-meta"></p>
+        <button class="ap-watch play-btn" type="button" data-ap-play="0"><span class="ring" aria-hidden="true"></span><span>${esc(ap.watch)}</span></button>
+      </div>
+      <nav class="ap-rail" aria-label="${esc(ap.rail)}">${films.map((f, i) => `<button type="button" aria-current="${i === 0}"><span class="ap-tick" aria-hidden="true"></span><span class="ap-rail-t"><span dir="ltr">${num(i + 1)}</span> ${esc(f.title)}</span></button>`).join('')}</nav>
+      <p class="ap-endline" aria-hidden="true">${esc(ap.end)}</p>
     </div>
   </div>
+  <ol class="ap-grid wrap">${films.map((f, i) => `<li><button type="button" class="ap-card${f.orient === 'v' ? ' is-v' : ''}" data-ap-play="${i}"><img src="${abs2(f.poster)}" alt="" loading="lazy" width="${f.orient === 'v' ? 720 : 1280}" height="${f.orient === 'v' ? 1280 : 720}"><span class="ap-card-t">${esc(f.title)}</span><span class="ap-card-m">${esc(f.client)} · ${esc(f.cat)}</span></button></li>`).join('')}</ol>
+  <div class="ap-cinema" hidden role="dialog" aria-modal="true" aria-label="${esc(ap.reel)}">
+    <video playsinline controls preload="none"></video>
+    <p class="ap-cinema-title"></p>
+    <button class="ap-cinema-close" type="button">${esc(ap.close)}</button>
+  </div>
 </section>
-${filmBand(lang, h)}
-<section class="section rule"><div class="wrap">
-  ${filmHead(h.bandEyebrow, h.selectedTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a>`)}
-  ${wideStack(lang, wide)}
-</div></section>
-<section class="section">
-  <div class="wrap">${filmHead(h.vertEyebrow, h.vertTitle)}</div>
-  ${carousel(lang, tall, c.ui)}
+<section class="ap-after">
+  <div class="wrap">
+    <span class="label">${esc(ap.services)}</span>
+    <ol class="ap-services">${h.offers.map((o, i) => `<li><a href="${url(lang, o.page)}"${peek(o.page)}><span class="ap-s-n" dir="ltr">${num(i + 1)}</span><span class="ap-s-t">${esc(o.t)}</span><span class="ap-s-d">${esc(o.d)}</span></a></li>`).join('')}</ol>
+    <p class="ap-all"><a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a></p>
+  </div>
 </section>
-<section class="section"><div class="wrap narrow reveal">
+${cta(lang, h.cta)}
+<section class="section ap-entity"><div class="wrap narrow">
   <p class="entity">${md(h.line)}</p>
 </div></section>
-<section class="section proof"><div class="wrap proof-row">
-  <div class="reveal">${photo('shahab-rig', c.media.rig, 800, 879, 'photo proof-img')}</div>
-  <div class="reveal" data-delay="1">
-    <span class="label ox">${esc(c.media.proofLabel)}</span>
-    <h2>${md(c.media.proofTitle)}</h2>
-  </div>
-</div></section>
-<section class="marquee" aria-hidden="true"><div class="marquee-track">${[0, 1].map(() => h.marquee.map((m) => `<span>${esc(m)}</span>`).join('')).join('')}</div></section>
-<section class="section"><div class="wrap">
-  <div class="section-head reveal"><h2>${esc(h.offersTitle)}</h2></div>
-  ${cards(lang, h.offers)}
-</div></section>
-<section class="section"><div class="wrap">
-  <div class="section-head reveal"><h2>${esc(h.numbersTitle)}</h2></div>
-  ${stats(c.stats)}
-</div></section>
-${cta(lang, h.cta)}`;
-  return { title: h.title, desc: h.metaDesc, body, schema: [orgSchema(lang), personSchema(lang), websiteSchema(lang), faqSchema(h.faq), breadcrumb(lang, 'home', c.ui.home)] };
+<script type="module" src="${asset('aperture.js')}"></script>`;
+  return { title: h.title, desc: h.metaDesc, body, head, bodyAttr: ' data-native-scroll', ogImage: abs2(reel.films[0].poster), schema: [orgSchema(lang), personSchema(lang), websiteSchema(lang), breadcrumb(lang, 'home', c.ui.home)] };
 };
 
 R.work = (lang) => {
@@ -473,7 +539,10 @@ R.work = (lang) => {
   </div>
 </section>
 ${cta(lang, w.cta)}`;
-  const itemList = { '@context': 'https://schema.org', '@type': 'ItemList', name: w.h1, numberOfItems: live.length, itemListElement: sorted.map((v, i) => ({ '@type': 'ListItem', position: i + 1, item: videoSchema(lang, v) })) };
+  // Summary-page list: each item is a URL to the film's own page, where its
+  // full VideoObject lives. Films that share a page are not listed twice.
+  const paged = sorted.filter((v) => filmPage(v));
+  const itemList = { '@context': 'https://schema.org', '@type': 'ItemList', name: w.h1, numberOfItems: paged.length, itemListElement: paged.map((v, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(lang, filmPage(v)) })) };
   return { title: w.title, desc: w.metaDesc, body, schema: [orgSchema(lang), itemList, breadcrumb(lang, 'work', c.nav.work)] };
 };
 
@@ -659,10 +728,115 @@ R.contact = (lang) => {
   return { title: k.title, desc: k.metaDesc, body, schema: [orgSchema(lang), breadcrumb(lang, 'contact', c.nav.contact)] };
 };
 
+// ---------- film pages ----------
+const CATS_ORDER = ['Brand Film', 'Practitioner', 'Injectables', 'Facial', 'Laser', 'Head Spa', 'Brows', 'Training', 'Behind the Scenes'];
+// The order a visitor meets them on /work/, so Previous / Next walk the same list.
+const PAGED = live.filter((v) => filmPage(v)).sort((a, b) => byRank(a, b) || CATS_ORDER.indexOf(a.cat) - CATS_ORDER.indexOf(b.cat));
+const FA_DIGITS = (s) => String(s).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
+const FORMAT = (lang, v) => { const r = v.orient === 'v' ? '9:16' : v.orient === 's' ? '1:1' : '16:9'; return lang === 'fa' ? FA_DIGITS(r) : r; };
+const RUNTIME = (lang, v) => { const t = SECS(v.dur); const r = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; return lang === 'fa' ? FA_DIGITS(r) : r; };
+const MONTH = (lang, v) => new Intl.DateTimeFormat(lang === 'fa' ? 'fa-IR' : 'en-CA', { year: 'numeric', month: 'long', timeZone: 'America/Toronto' }).format(new Date(v.date));
+const VENUE = (lang, v) => { const r = lang === 'fa' ? v.venue_fa : v.venue; return r && !/^Divan Group|^دیوان گروپ/.test(r) ? r : ''; };
+const IS_BTS = (v) => (v.tags || []).includes('bts') || v.cat === 'Behind the Scenes';
+
+// One honest sentence built from what is actually known about the film — how
+// Shahab tagged it, which clinic, which city. No invented claims.
+function filmDesc(lang, v) {
+  const f = LANGS[lang].film;
+  const tags = v.tags || [];
+  const key = ['testimonial', 'bts', 'informative', 'branding', 'procedure'].find((t) => tags.includes(t));
+  const kind = key ? f.kind[key] : f.catKind[v.cat] || f.catKind._;
+  const ven = VENUE(lang, v);
+  const cine = tags.includes('cinematic');
+  if (lang === 'fa') return `یک ${kind}${cine ? ' ' + f.cinematic : ''}${ven ? ` ${f.descFor} ${ven}` : ''}`;
+  const phrase = `${cine ? f.cinematic + ' ' : ''}${kind}`;
+  return `${/^[aeiou]/i.test(phrase) ? 'An' : 'A'} ${phrase}${ven ? ` ${f.descFor} ${ven}` : ''}`;
+}
+
+function filmPageR(lang, v) {
+  const c = LANGS[lang], f = c.film;
+  const page = filmPage(v);
+  const t = lang === 'fa' ? v.title_fa : v.title;
+  const cat = lang === 'fa' ? v.cat_fa : v.cat;
+  const ven = VENUE(lang, v);
+  const isV = v.orient === 'v';
+  const bts = IS_BTS(v);
+  const sentence = filmDesc(lang, v);
+  const credit = bts ? f.creditBts : f.credit;
+  const orientWord = v.orient === 'v' ? f.vertical : v.orient === 's' ? f.square : f.horizontal;
+  const i = PAGED.indexOf(v);
+  const prev = PAGED[i - 1], next = PAGED[i + 1];
+  const tl = (x) => (lang === 'fa' ? x.title_fa : x.title);
+  const related = live.filter((x) => x.id !== v.id && x.cat === v.cat).sort(byRank);
+  const relWide = related.filter((x) => x.orient === 'h').slice(0, 2);
+  const relTall = related.filter((x) => x.orient !== 'h').slice(0, 12);
+  const facts = [
+    ven && [f.facts.clinic, ven],
+    [f.facts.category, cat],
+    [f.facts.format, `<span dir="ltr">${FORMAT(lang, v)}</span> · ${orientWord}`],
+    [f.facts.runtime, `<span dir="ltr">${RUNTIME(lang, v)}</span>`],
+    [f.facts.published, MONTH(lang, v)],
+    bts ? [f.facts.production, 'Divan Group'] : [f.facts.direction, f.director],
+  ].filter(Boolean);
+  const tags = (v.tags || []).map((k) => `<span class="chip chip-static">${esc(f.tags[k] || k)}</span>`).join('');
+  const body = `
+<section class="film-hero${isV ? ' is-v' : ''}">
+  <div class="wrap"><div class="film-hero-grid">
+    <div class="film-head reveal in">
+      <a class="label ox film-back" href="${url(lang, 'work')}">${esc(f.all)}</a>
+      <h1 class="film-h1">${esc(t)}</h1>
+    </div>
+    <div class="stage${isV ? ' is-v' : v.orient === 's' ? ' is-s' : ''}">
+      <div class="live" id="stage-${v.id}"${liveAttrs(v)} data-eager><img class="live-poster" src="${POSTER(v, 'maxresdefault')}" onerror="this.onerror=null;this.src='${YT_IMG(v.id)}'" alt="${esc(t)}" width="1280" height="720" fetchpriority="high"></div>
+      <button class="play-btn stage-play" type="button" data-play-film="${v.id}" aria-controls="stage-${v.id}"><span class="ring" aria-hidden="true"></span><span>${esc(f.playSound)}</span></button>
+    </div>
+    <div class="film-body reveal in">
+      <p class="lead">${esc(sentence)}. ${esc(f.purpose[v.cat] || '')}</p>
+      <dl class="film-facts">${facts.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd>${/<span/.test(val) ? val : esc(val)}</dd></div>`).join('')}</dl>
+      ${tags ? `<p class="film-tags">${tags}</p>` : ''}
+      <p class="cta-row"><a class="btn" href="${url(lang, 'contact')}">${esc(f.cta.button)}</a><a class="link arrow" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">${esc(f.youtube)}</a></p>
+    </div>
+  </div></div>
+</section>
+${relWide.length || relTall.length ? `<section class="section rule">
+  <div class="wrap">${filmHead(cat, f.moreTitle, `<a class="link arrow" href="${url(lang, 'work')}">${esc(c.home.filmsAll)}</a>`)}${relWide.length ? wideStack(lang, relWide) : ''}</div>
+  ${relTall.length ? carousel(lang, relTall, c.ui) : ''}
+</section>` : ''}
+<nav class="wrap film-pager" aria-label="${esc(f.pagerLabel)}">
+  ${prev ? `<a class="film-pager-prev" href="${url(lang, filmPage(prev))}" rel="prev"><span class="label">${esc(f.prev)}</span><span class="film-pager-t">${esc(tl(prev))}</span></a>` : '<span></span>'}
+  ${next ? `<a class="film-pager-next" href="${url(lang, filmPage(next))}" rel="next"><span class="label">${esc(f.next)}</span><span class="film-pager-t">${esc(tl(next))}</span></a>` : ''}
+</nav>
+${cta(lang, f.cta)}`;
+  const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: c.ui.home, item: abs(lang, 'home') },
+    { '@type': 'ListItem', position: 2, name: c.nav.work, item: abs(lang, 'work') },
+    { '@type': 'ListItem', position: 3, name: t, item: abs(lang, page) },
+  ] };
+  return {
+    title: `${t}${ven ? ' · ' + ven : ''}${f.titleSuffix}`,
+    // Led by the title: two clinic-less films of the same kind and length
+    // would otherwise share a description word for word.
+    desc: `${t}: ${lang === 'fa' ? sentence : sentence.charAt(0).toLowerCase() + sentence.slice(1)}. ${credit} ${FORMAT(lang, v)} · ${RUNTIME(lang, v)}.`,
+    body,
+    ogImage: YT_IMG(v.id, 'maxresdefault'),
+    ogType: 'video.other',
+    schema: [orgSchema(lang), videoSchema(lang, v), crumbs],
+  };
+}
+
 // ---------- build ----------
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'assets'), { recursive: true });
-for (const f of fs.readdirSync(path.join(__dirname, 'static'))) fs.copyFileSync(path.join(__dirname, 'static', f), path.join(OUT, /\.(css|js|mp4|webm|jpg|jpeg|png|webp|avif)$/.test(f) ? 'assets/' + f : f));
+(function copyStatic(dir, rel) {
+  for (const f of fs.readdirSync(dir)) {
+    const src = path.join(dir, f);
+    if (fs.statSync(src).isDirectory()) { copyStatic(src, rel + f + '/'); continue; }
+    // Root files keep the old rule; anything in a sub-folder is an asset.
+    const dest = rel ? 'assets/' + rel + f : /\.(css|js|mp4|webm|jpg|jpeg|png|webp|avif)$/.test(f) ? 'assets/' + f : f;
+    fs.mkdirSync(path.dirname(path.join(OUT, dest)), { recursive: true });
+    fs.copyFileSync(src, path.join(OUT, dest));
+  }
+})(path.join(__dirname, 'static'), '');
 
 const urls = [];
 const postUrls = [];
@@ -672,6 +846,11 @@ for (const lang of Object.keys(LANGS)) {
     const html = layout(lang, page, r);
     write(url(lang, page).replace(/^\//, '') + 'index.html', html);
     urls.push({ loc: abs(lang, page), lang, page });
+  }
+  // one page per film
+  for (const v of PAGED) {
+    const pg = filmPage(v);
+    write(url(lang, pg).replace(/^\//, '') + 'index.html', layout(lang, pg, filmPageR(lang, v)));
   }
   // one page per post per language it exists in
   for (const post of livePosts(lang)) {
@@ -685,8 +864,14 @@ for (const lang of Object.keys(LANGS)) {
 
 // sitemap with hreflang pairs
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
 ${urls.filter((u) => u.page !== 'blog' || posts.length).map((u) => `  <url><loc>${u.loc}</loc><xhtml:link rel="alternate" hreflang="en" href="${abs('en', u.page)}"/><xhtml:link rel="alternate" hreflang="fa" href="${abs('fa', u.page)}"/><xhtml:link rel="alternate" hreflang="x-default" href="${abs('en', u.page)}"/><changefreq>${u.page === 'work' ? 'weekly' : 'monthly'}</changefreq><priority>${u.page === 'home' ? '1.0' : u.page === 'privacy' ? '0.2' : '0.8'}</priority></url>`).join('\n')}
+${Object.keys(LANGS).flatMap((lang) => PAGED.map((v) => {
+  const pg = filmPage(v);
+  const f = LANGS[lang].film;
+  const t = lang === 'fa' ? v.title_fa : v.title;
+  return `  <url><loc>${abs(lang, pg)}</loc><xhtml:link rel="alternate" hreflang="en" href="${abs('en', pg)}"/><xhtml:link rel="alternate" hreflang="fa" href="${abs('fa', pg)}"/><xhtml:link rel="alternate" hreflang="x-default" href="${abs('en', pg)}"/><lastmod>${v.date.slice(0, 10)}</lastmod><video:video><video:thumbnail_loc>${YT_IMG(v.id)}</video:thumbnail_loc><video:title>${esc(t)}</video:title><video:description>${esc(filmDesc(lang, v) + '. ' + (IS_BTS(v) ? f.creditBts : f.credit))}</video:description><video:player_loc>https://www.youtube-nocookie.com/embed/${v.id}</video:player_loc><video:duration>${SECS(v.dur)}</video:duration><video:publication_date>${v.date.replace('Z', '+00:00')}</video:publication_date><video:family_friendly>yes</video:family_friendly></video:video></url>`;
+})).join('\n')}
 ${postUrls.map((u) => {
   const both = posts.find((p) => p.slug === u.slug);
   const alts = ['en', 'fa'].filter((l) => postFor(both, l));
@@ -795,6 +980,6 @@ write('llms-full.txt', `# Cinematic Clinic — full text (English)\n\nSource: ${
   `# ${strip(en.academy.h1)}\n\n${strip(en.academy.lead)}\n\n${en.academy.intro.map(strip).join('\n\n')}\n\n## Modules\n\n${en.academy.modules.map((m) => `${m.n}. ${m.t} — ${m.d} (${m.len})`).join('\n')}\n\n## FAQ\n\n${en.academy.faq.map((f) => `**${f.q}**\n${strip(Array.isArray(f.a) ? f.a.join(' ') : f.a)}`).join('\n\n')}\n\n` +
   `# ${strip(en.about.h1)}\n\n${strip(en.about.statement)}\n\n${en.about.bio.map(strip).join('\n\n')}\n\n${en.about.facts.map((f) => `- ${f.k}: ${strip(f.v)}`).join('\n')}\n\n${en.about.divan.map(strip).join('\n\n')}\n\n` +
   `# ${strip(en.consent.h1)}\n\n${en.consent.intro.map(strip).join('\n\n')}\n\n${en.consent.sections.map((s) => `## ${s.t}\n\n${(s.p || []).map(strip).join('\n\n')}${s.list ? '\n' + s.list.map((i) => '- ' + strip(i)).join('\n') : ''}`).join('\n\n')}\n\n` +
-  `# Films\n\n${live.map((v) => `- ${v.title} (${v.cat}) — https://www.youtube.com/watch?v=${v.id}`).join('\n')}\n`);
+  `# Films\n\n${live.map((v) => `- ${v.title}${v.venue && !/^Divan Group/.test(v.venue) ? ' — ' + v.venue : ''} (${v.cat}, ${RUNTIME('en', v)}) — ${filmPage(v) ? abs('en', filmPage(v)) : 'https://www.youtube.com/watch?v=' + v.id}`).join('\n')}\n`);
 
 console.log('Built', urls.length, 'pages →', OUT);

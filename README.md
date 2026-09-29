@@ -73,6 +73,31 @@ After go-live, update `SITE` at the top of build.js if the canonical host ever c
 - `static/site.css`, `static/site.js`, `static/favicon.svg` — copied into `dist/assets/` at build.
 - `build.js` — the generator: layout, JSON-LD schema, sitemap, robots.txt, llms.txt.
 - `api/contact.js` — Vercel serverless function; posts both forms to balamchi@divangroup.ca via Resend.
+- `content/reel.json` — the 16 films on the home page reel, in order (orientation, EN/FA title,
+  client, category, video + poster paths relative to `base`).
+- `src/aperture.js` — the home page scene (three.js). Its bundle, `static/aperture.js`, is committed,
+  so the Vercel build never needs it. After editing the source, rebuild the bundle:
+
+  ```
+  npm i --no-save three@0.186.1 esbuild@0.25
+  npx esbuild src/aperture.js --bundle --format=esm --minify --target=es2019 --legal-comments=none --outfile=static/aperture.js
+  ```
+
+## The home page — APERTURE
+
+An iris opens on the first film. Scrolling travels through the reel in `content/reel.json`,
+films hanging in the dark; the one in focus plays and lights the room in its own colour.
+Click it (or "Watch with sound") for the whole film with sound; arrows move one film at a time;
+the rail on the side jumps to any film. The iris closes at the end.
+
+The room is alive (v2): the camera breathes and leans toward the mouse, dust hangs in the
+projector light, each film stands on a dark mirror, frames soften while travelling and land
+with a light leak, scope films are matted to their real width (detected from the black bars),
+and a viewfinder with the film's own timecode locks onto the film in focus. Between pages the
+lens closes and opens (the `.curtain`, drawn as an iris in CSS).
+
+The page stands without the scene: reduced motion, Save-Data, 2G, no WebGL, or a module that
+has not started in four seconds all get the same films as a still grid, each one playable.
 
 ## Pages (each in EN at `/` and FA at `/fa/`)
 

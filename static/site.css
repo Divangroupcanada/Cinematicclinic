@@ -116,10 +116,6 @@ em { font-style: normal; color: var(--ox); }
 /* hero */
 .hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; padding: 140px 0 48px; overflow: hidden; isolation: isolate; }
 .hero-media { position: absolute; inset: 0; z-index: -2; background: #000 center/cover no-repeat; }
-.hero-media iframe { opacity: 0; transition: opacity 1.2s ease .4s; background: #000; }
-.hero-media.is-live iframe { opacity: 1; }
-.hero-media iframe, .hero-media video { position: absolute; top: 50%; left: 50%; width: 100vw; height: 56.25vw; min-width: 177.78vh; min-height: 100vh; transform: translate(-50%, -50%); pointer-events: none; border: 0; object-fit: cover; }
-.hero-media video { width: 100%; height: 100%; min-width: 0; min-height: 0; top: 0; left: 0; transform: none; }
 .hero-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11,11,13,.55) 0%, rgba(11,11,13,.15) 35%, rgba(11,11,13,.35) 65%, rgba(11,11,13,.94) 100%); }
 .hero .label { margin-bottom: 22px; }
 .hero .display { font-size: clamp(2.8rem, 8.2vw, 7.6rem); font-weight: 500; line-height: .98; letter-spacing: -.035em; max-width: 12ch; margin: 0 0 22px; text-wrap: balance; }
@@ -352,7 +348,7 @@ html:not(.js) .curtain { display: none; }
 /* --- Smooth scroll wrapper ---------------------------------------- */
 html.has-smooth, html.has-smooth body { overscroll-behavior-y: none; }
 html.has-smooth body { overflow-x: hidden; }
-#scroll { will-change: transform; }
+html.has-smooth #scroll { will-change: transform; }
 
 /* --- Word masks ---------------------------------------------------- */
 .w {
@@ -548,7 +544,7 @@ html:not(.js) .curtain { display: none; }
 /* --- Smooth scroll wrapper ---------------------------------------- */
 html.has-smooth, html.has-smooth body { overscroll-behavior-y: none; }
 html.has-smooth body { overflow-x: hidden; }
-#scroll { will-change: transform; }
+html.has-smooth #scroll { will-change: transform; }
 
 /* --- Word masks ---------------------------------------------------- */
 .w {
@@ -868,3 +864,289 @@ a.vframe .play { position: absolute; inset: 0; margin: auto; }
 .post-body > .wrap + .wrap { margin-top: clamp(20px, 2.4vw, 34px); }
 .post-body h2 { margin-bottom: 14px; }
 .link.back { display: inline-block; margin-bottom: 22px; }
+
+/* =========================================================
+   LIVE FILMS — every film plays, muted, while it is on screen.
+   site.js mounts the player and adds .is-live once frames are
+   really moving; until then the still holds the frame.
+   ========================================================= */
+.live { position: relative; overflow: hidden; background: #000; }
+.live > iframe, .live > video, .live > .live-yt {
+  position: absolute; top: 50%; left: 50%; width: 100%; height: 100%;
+  transform: translate(-50%, -50%) scale(1.015);
+  border: 0; pointer-events: none; opacity: 0;
+  transition: opacity .9s var(--ease);
+}
+.live > video { object-fit: cover; }
+.live.is-live > iframe, .live.is-live > video { opacity: 1; }
+.live > .live-poster { transition: opacity .9s var(--ease); }
+.film-frame.live > .live-poster { transition: opacity .9s var(--ease), scale 1.2s var(--ease); }
+.live.is-live > .live-poster { opacity: 0; }
+.film .play { transition: background .2s, border-color .2s, opacity .5s, transform .5s var(--ease); }
+.film .live.is-live .play { opacity: 0; transform: scale(.85); }
+.film:hover .live.is-live .play { opacity: 1; transform: none; }
+
+/* cover: a 16:9 (or 9:16) film filling a box of any shape, cropped not boxed */
+.live-cover { position: absolute; inset: 0; container-type: size; }
+.live-cover > .live-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.live-cover > iframe, .live-cover > .live-yt { width: max(100cqw, 177.78cqh); height: max(100cqh, 56.25cqw); }
+.live-cover.is-v > iframe, .live-cover.is-v > .live-yt { width: max(100cqw, 56.25cqh); height: max(100cqh, 177.78cqw); }
+.live-cover > video { width: 100%; height: 100%; transform: translate(-50%, -50%); }
+
+/* a player the visitor asked for, with sound: takes the frame over */
+.live.is-player > iframe { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); z-index: 2; }
+.live.is-player > .live-poster, .live.is-player .play { opacity: 0; }
+
+/* ---- the pause control: a quiet icon in the header, every page ---- */
+.motion {
+  margin-inline-start: auto; flex: none; position: relative;
+  display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  border-radius: 50%; border: 1px solid var(--line-2); background: transparent;
+  color: var(--bone-2); cursor: pointer; transition: color .2s, border-color .2s;
+}
+.motion:hover, .motion:focus-visible { color: var(--bone); border-color: var(--bone); }
+.motion[hidden] { display: none; }
+.motion + .nav-toggle { margin-inline-start: 4px; }
+.motion-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.motion-icon { position: relative; width: 10px; height: 10px; }
+.motion-icon::before, .motion-icon::after { content: ""; position: absolute; top: 0; width: 3px; height: 10px; background: currentColor; }
+.motion-icon::before { left: 1px; }
+.motion-icon::after { right: 1px; }
+.motion.is-paused .motion-icon::before { left: 2px; width: 0; height: 0; background: none; border-style: solid; border-width: 5px 0 5px 8px; border-color: transparent transparent transparent currentColor; }
+.motion.is-paused .motion-icon::after { display: none; }
+
+/* ---- FILM PAGE — the title, the film playing, then everything about it ---- */
+.film-hero { padding: clamp(92px, 9vw, 122px) 0 clamp(40px, 5vw, 72px); }
+.film-hero-grid { display: grid; grid-template-areas: "head" "stage" "body"; row-gap: clamp(22px, 3vw, 36px); }
+.film-hero:not(.is-v) .film-hero-grid { max-width: calc(64vh * 16 / 9); margin-inline: auto; }
+.film-head { grid-area: head; }
+.film-body { grid-area: body; }
+.stage { grid-area: stage; position: relative; }
+.stage > .live { width: 100%; aspect-ratio: 16 / 9; }
+.stage.is-v > .live { width: min(100%, calc(min(76vh, 800px) * 9 / 16)); aspect-ratio: 9 / 16; margin-inline: auto; }
+.stage.is-s > .live { width: min(100%, 76vh); aspect-ratio: 1 / 1; margin-inline: auto; }
+.stage > .live > .live-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stage-play { position: absolute; z-index: 3; inset-inline-start: clamp(16px, 2vw, 28px); bottom: clamp(16px, 2vw, 28px); text-shadow: 0 1px 14px rgba(0, 0, 0, .55); }
+.stage-play[hidden] { display: none; }
+.stage.is-v .stage-play { inset-inline-start: 50%; transform: translateX(-50%); white-space: nowrap; }
+[dir="rtl"] .stage.is-v .stage-play { transform: translateX(50%); }
+@media (min-width: 900px) {
+  .film-hero.is-v .film-hero-grid { grid-template-columns: calc(min(76vh, 800px) * 9 / 16) minmax(0, 1fr); grid-template-areas: "stage head" "stage body"; grid-template-rows: auto 1fr; column-gap: clamp(40px, 5vw, 88px); align-items: start; }
+  .film-hero.is-v .stage > .live { width: 100%; }
+  .film-hero.is-v .film-body { align-self: start; }
+}
+.film-back { display: inline-block; text-decoration: none; }
+.film-back::before { content: "\2190"; margin-inline-end: 10px; }
+[dir="rtl"] .film-back::before { content: "\2192"; }
+.lang-en .film-h1, .lang-fa .film-h1 { font-size: clamp(1.9rem, 3.6vw, 3.4rem); line-height: 1; letter-spacing: -.03em; margin: 16px 0 0; text-wrap: balance; }
+.lang-fa .film-h1 { letter-spacing: 0; line-height: 1.3; }
+.film-body .lead { max-width: 62ch; margin-top: 0; }
+.film-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(138px, 1fr)); gap: 18px 28px; margin: 28px 0 22px; padding: 22px 0; border-block: 1px solid var(--line); }
+.film-facts dt { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--bone-3); }
+.lang-fa .film-facts dt { letter-spacing: 0; font-size: .8rem; }
+.film-facts dd { margin: 6px 0 0; color: var(--bone); }
+.film-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
+.chip-static { cursor: default; pointer-events: none; }
+.film-pager { display: flex; justify-content: space-between; gap: 24px; padding-block: clamp(32px, 4vw, 56px); border-top: 1px solid var(--line); }
+.film-pager a { display: grid; gap: 8px; max-width: 46%; color: var(--bone); text-decoration: none; }
+.film-pager a:hover .film-pager-t { text-decoration: underline; text-underline-offset: 4px; }
+.film-pager-next { text-align: end; margin-inline-start: auto; }
+.film-pager-t { font-size: clamp(1rem, 1.6vw, 1.3rem); }
+
+@media (prefers-reduced-motion: reduce) {
+  .live > iframe, .live > video, .live > .live-poster { transition: none; }
+}
+
+/* =========================================================
+   APERTURE — the identity, site-wide.
+   Serif display (Instrument Serif) over the working grotesque. Sentence case:
+   the films are loud, the type is quiet and expensive.
+   ========================================================= */
+:root { --serif: "Instrument Serif", "Iowan Old Style", "Times New Roman", serif; --ink: #070708; }
+.lang-en h1, .lang-en h2, .lang-en .display, .lang-en .stat-n {
+  font-family: var(--serif); font-variation-settings: normal; text-transform: none;
+  font-weight: 400; letter-spacing: -.012em; line-height: .98;
+}
+.lang-en h1 { font-size: clamp(3.2rem, 7.8vw, 7.4rem); }
+.lang-en h2 { font-size: clamp(2.4rem, 5.4vw, 4.8rem); }
+.lang-en h1 em, .lang-en h2 em, .lang-en .display em { font-style: italic; color: inherit; }
+.lang-en .film-h1 { font-size: clamp(2.4rem, 4.6vw, 4.4rem); line-height: 1; letter-spacing: -.012em; }
+.lang-en .closing h2 { font-size: clamp(2.6rem, 6vw, 5.6rem); }
+
+/* =========================================================
+   APERTURE — the home reel
+   ========================================================= */
+.page-home .top, .page-home .top.is-solid { background: linear-gradient(180deg, rgba(7,7,8,.62), rgba(7,7,8,0)); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.page-home .top.is-hidden { transform: none; }
+.ap { position: relative; }
+.ap-track { display: none; position: relative; height: calc((var(--ap-n) - 1) * 80vh + 190vh); }
+@media (max-width: 759px) { .ap-track { height: calc((var(--ap-n) - 1) * 70vh + 190vh); } }
+.ap-js .ap-track { display: block; }
+.ap-js .ap-grid { display: none; }
+.ap-static .ap-track { display: none !important; }
+.ap-static .ap-grid { display: grid !important; }
+.ap-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #070708; }
+.ap-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
+
+/* the name: over the first film while the reel runs, at the head of the page when it can't */
+.ap-hero { position: relative; z-index: 2; width: min(var(--wrap), 100% - 2 * var(--gutter)); margin-inline: auto; padding-top: clamp(128px, 15vw, 190px); }
+.ap-js .ap:not(.ap-static) .ap-hero { position: absolute; top: 0; inset-inline: var(--gutter); width: auto; margin: 0; height: 100vh; height: 100svh; padding: 0 0 clamp(88px, 13vh, 150px);
+  display: flex; flex-direction: column; justify-content: flex-end; pointer-events: none;
+  opacity: 0; transform: translateY(18px); transition: opacity 1.4s var(--ease) .9s, transform 1.6s var(--ease) .9s; }
+.ap-js .ap-ready:not(.ap-static) .ap-hero { opacity: var(--ap-hero, 1); transform: translateY(calc((1 - var(--ap-hero, 1)) * -40px)); transition-delay: .9s; }
+.ap-js .ap-ready.ap-moved:not(.ap-static) .ap-hero { transition: none; }
+.ap-name { font-family: var(--serif); font-weight: 400; font-size: clamp(3.4rem, 12.5vw, 13.5rem); line-height: .86; letter-spacing: -.028em; margin: 0; color: #F4EFE7; text-wrap: nowrap; text-shadow: 0 2px 60px rgba(0,0,0,.35); }
+.lang-fa .ap-name { font-family: var(--sans); font-weight: 200; letter-spacing: 0; line-height: 1.1; font-size: clamp(3rem, 10vw, 10rem); }
+.ap-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 22px; margin: clamp(14px, 2vw, 24px) 0 0; max-width: none; }
+.ap-line > span:first-child { font-family: var(--serif); font-style: italic; font-size: clamp(1.4rem, 2.6vw, 2.4rem); color: #F4EFE7; line-height: 1.1; }
+.lang-fa .ap-line > span:first-child { font-family: var(--sans); font-style: normal; font-weight: 300; }
+.ap-sub { font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,239,231,.62); }
+.lang-fa .ap-sub { letter-spacing: 0; text-transform: none; font-size: .9rem; }
+.ap-scroll { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 2; font-size: .66rem; letter-spacing: .28em; text-transform: uppercase; color: rgba(244,239,231,.55);
+  display: grid; justify-items: center; gap: 10px; opacity: 0; transition: opacity 1s var(--ease) 2.2s; }
+.ap-scroll::after { content: ""; width: 1px; height: 38px; background: linear-gradient(rgba(244,239,231,.7), rgba(244,239,231,0)); transform-origin: top; animation: ap-drip 2.4s var(--ease) infinite; }
+.ap-ready .ap-scroll { opacity: var(--ap-hero, 1); }
+@keyframes ap-drip { 0% { transform: scaleY(0); } 45% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+/* the caption of the film in focus */
+.ap-caption { position: absolute; inset-inline-start: var(--gutter); bottom: clamp(28px, 6vh, 64px); z-index: 2; max-width: min(520px, 70vw);
+  opacity: calc((1 - var(--ap-hero, 1)) * (1 - var(--ap-end, 0))); }
+.ap-caption > * { transition: opacity .5s var(--ease), transform .7s var(--ease); }
+.ap-caption:not(.is-in) > * { opacity: 0; transform: translateY(10px); }
+.ap-caption > :nth-child(2) { transition-delay: .05s; } .ap-caption > :nth-child(3) { transition-delay: .1s; } .ap-caption > :nth-child(4) { transition-delay: .15s; }
+.ap-count { display: block; font-size: .7rem; letter-spacing: .22em; color: rgba(244,239,231,.55); font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+.ap-title { font-family: var(--serif); font-weight: 400; font-size: clamp(2.2rem, 4.4vw, 4.2rem) !important; line-height: .95; letter-spacing: -.015em; text-transform: none !important; margin: 0; color: #F4EFE7; }
+.lang-fa .ap-title { font-family: var(--sans); font-weight: 300; line-height: 1.25; }
+.ap-meta { margin: 10px 0 18px; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: rgba(244,239,231,.62); }
+.lang-fa .ap-meta { letter-spacing: 0; text-transform: none; font-size: .92rem; }
+.ap-watch { pointer-events: auto; }
+.ap-watch .ring { width: 48px; height: 48px; }
+.ap-hovering .ap-watch .ring { background: var(--bone); transform: scale(1.08); }
+.ap-hovering .ap-watch .ring::after { border-left-color: var(--ink); }
+
+/* the index: sixteen ticks, a film strip's edge */
+.ap-rail { position: absolute; inset-inline-end: clamp(14px, 2.4vw, 34px); top: 50%; transform: translateY(-50%); z-index: 3; display: grid; gap: 2px;
+  opacity: calc((1 - var(--ap-hero, 1) * .55) * (1 - var(--ap-end, 0))); transition: opacity .4s; }
+.ap-rail button { display: flex; align-items: center; justify-content: flex-end; gap: 12px; background: none; border: 0; padding: 5px 0; cursor: pointer; color: rgba(244,239,231,.5); font: inherit; }
+[dir="rtl"] .ap-rail-t { transform: translateX(-6px); }
+.ap-tick { order: 2; width: 14px; height: 1px; background: currentColor; transition: width .45s var(--ease), background .3s; }
+.ap-rail-t { order: 1; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; opacity: 0; transform: translateX(6px); transition: opacity .3s, transform .4s var(--ease); }
+.lang-fa .ap-rail-t { letter-spacing: 0; text-transform: none; font-size: .85rem; }
+.ap-rail button[aria-current="true"] { color: #F4EFE7; }
+.ap-rail button[aria-current="true"] .ap-tick { width: 34px; }
+.ap-rail button:hover .ap-rail-t, .ap-rail button:focus-visible .ap-rail-t { opacity: 1; transform: none; }
+.ap-rail button:hover .ap-tick { width: 26px; }
+@media (max-width: 759px) { .ap-rail { display: none; } }
+
+.ap-endline { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; max-width: none; z-index: 2; pointer-events: none;
+  font-family: var(--serif); font-style: italic; font-size: clamp(1.8rem, 4vw, 3.4rem); color: #F4EFE7;
+  opacity: clamp(0, calc((var(--ap-end, 0) - .55) * 3), 1); }
+.lang-fa .ap-endline { font-family: var(--sans); font-style: normal; font-weight: 300; }
+
+/* the reel without WebGL: the same films, still, each one playable */
+.ap-grid { list-style: none; padding: clamp(44px, 6vw, 88px) 0 clamp(40px, 6vw, 80px); margin-block: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: clamp(12px, 1.6vw, 22px); grid-auto-flow: dense; }
+.ap-grid li:has(.ap-card:not(.is-v)) { grid-column: span 2; }
+.ap-card { all: unset; display: grid; gap: 8px; cursor: pointer; width: 100%; }
+.ap-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #111; transition: filter .4s, transform .6s var(--ease); filter: saturate(.85); }
+.ap-card.is-v img { aspect-ratio: 9 / 16; }
+.ap-card:hover img, .ap-card:focus-visible img { filter: none; transform: scale(1.015); }
+.ap-card:focus-visible { outline: 2px solid var(--ox); outline-offset: 4px; }
+.ap-card-t { font-family: var(--serif); font-size: 1.5rem; line-height: 1.05; color: var(--bone); }
+.lang-fa .ap-card-t { font-family: var(--sans); font-size: 1.15rem; }
+.ap-card-m { font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--bone-3); }
+.lang-fa .ap-card-m { letter-spacing: 0; text-transform: none; font-size: .85rem; }
+@media (max-width: 520px) { .ap-grid { grid-template-columns: 1fr 1fr; } .ap-grid li:has(.ap-card:not(.is-v)) { grid-column: 1 / -1; } }
+
+/* cinema: the film, whole, with sound */
+.ap-cinema { position: fixed; inset: 0; z-index: 95; background: rgba(4, 4, 5, .96); display: grid; place-items: center; opacity: 0; transition: opacity .45s var(--ease); }
+.ap-cinema[hidden] { display: none; }
+.ap-cinema.is-open { opacity: 1; }
+.ap-cinema video { width: min(92vw, calc(82vh * 16 / 9)); aspect-ratio: 16 / 9; background: #000; transform: scale(.96); transition: transform .6s var(--ease); }
+.ap-cinema video.is-v { width: auto; height: min(84vh, 92vw * 16 / 9); aspect-ratio: 9 / 16; max-width: 92vw; }
+.ap-cinema.is-open video { transform: none; }
+.ap-cinema-title { position: absolute; inset-inline-start: var(--gutter); bottom: 18px; margin: 0; font-family: var(--serif); font-size: 1.3rem; color: var(--bone-2); max-width: 70vw; }
+.lang-fa .ap-cinema-title { font-family: var(--sans); font-size: 1rem; }
+.ap-cinema-close { position: absolute; top: 18px; inset-inline-end: var(--gutter); background: none; border: 1px solid var(--line-2); color: var(--bone); border-radius: 999px; padding: 8px 16px; font: inherit; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
+.ap-cinema-close:hover { border-color: var(--bone); }
+.ap-locked, .ap-locked body { overflow: hidden; }
+
+/* after the reel: what I make, in three lines */
+.ap-after { padding: clamp(90px, 12vw, 170px) 0 clamp(40px, 6vw, 90px); background: var(--ink); position: relative; z-index: 1; }
+.ap-services { list-style: none; padding: 0; margin: 22px 0 0; border-top: 1px solid var(--line); }
+.ap-services a { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, 38%); align-items: baseline; gap: 18px; padding: clamp(18px, 2.6vw, 34px) 0; border-bottom: 1px solid var(--line); color: var(--bone); }
+.ap-s-n { font-size: .72rem; letter-spacing: .2em; color: var(--bone-3); font-variant-numeric: tabular-nums; }
+.ap-s-t { font-family: var(--serif); font-size: clamp(2.2rem, 5.6vw, 5rem); line-height: 1; letter-spacing: -.015em; transition: transform .6s var(--ease), color .3s; }
+.lang-fa .ap-s-t { font-family: var(--sans); font-weight: 300; font-size: clamp(1.8rem, 4.4vw, 3.6rem); line-height: 1.3; }
+.ap-s-d { font-size: .95rem; line-height: 1.55; color: var(--bone-3); opacity: .75; transition: opacity .3s, color .3s; }
+.ap-services a:hover .ap-s-t, .ap-services a:focus-visible .ap-s-t { transform: translateX(14px); color: #fff; }
+[dir="rtl"] .ap-services a:hover .ap-s-t { transform: translateX(-14px); }
+.ap-services a:hover .ap-s-d { opacity: 1; color: var(--bone-2); }
+@media (max-width: 759px) { .ap-services a { grid-template-columns: 34px minmax(0, 1fr); } .ap-s-d { grid-column: 2; } }
+.ap-all { margin: clamp(28px, 4vw, 48px) 0 0; }
+.ap-entity { padding-top: 0; }
+.ap-entity .entity { color: var(--bone-3); font-size: .95rem; }
+/* the iris is the home page's entrance; the page iris only closes on the way out */
+.page-home .curtain:not(.is-down) { visibility: hidden; }
+.ap-endline { text-shadow: 0 2px 30px rgba(0, 0, 0, .6); }
+
+/* =========================================================
+   APERTURE v2 — the room is alive
+   ========================================================= */
+
+/* the "Scroll" hint waits 2 s to appear, but leaves at once */
+.ap-ready.ap-moved .ap-scroll { transition: opacity .35s var(--ease); }
+
+/* the viewfinder: frame lines that lock onto the film in focus, with its timecode */
+.ap-vf { position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none;
+  width: var(--vf-w, 0); height: var(--vf-h, 0); transform: translate3d(var(--vf-x, 0), var(--vf-y, 0), 0); opacity: var(--vf-o, 0); }
+.ap-vf-c { position: absolute; width: 22px; height: 22px; border: 0 solid rgba(244, 239, 231, .78); }
+.ap-vf-c.tl { left: -12px; top: -12px; border-top-width: 1px; border-left-width: 1px; }
+.ap-vf-c.tr { right: -12px; top: -12px; border-top-width: 1px; border-right-width: 1px; }
+.ap-vf-c.bl { left: -12px; bottom: -12px; border-bottom-width: 1px; border-left-width: 1px; }
+.ap-vf-c.br { right: -12px; bottom: -12px; border-bottom-width: 1px; border-right-width: 1px; }
+.ap-vf-tc, .ap-vf-ar { position: absolute; right: -12px; font: 500 .62rem/1 var(--sans); letter-spacing: .16em;
+  color: rgba(244, 239, 231, .74); font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 10px rgba(0, 0, 0, .6); }
+.ap-vf-tc { bottom: -30px; }
+.ap-vf-tc::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #e0493c; margin-right: 9px; vertical-align: 1px; animation: ap-blink 1.6s steps(1) infinite; }
+.ap-vf-ar { top: -28px; }
+[dir="rtl"] .ap-vf-tc, [dir="rtl"] .ap-vf-ar { right: auto; left: -12px; }
+@keyframes ap-blink { 50% { opacity: .2; } }
+@media (max-width: 759px) { .ap-vf-c { width: 16px; height: 16px; } .ap-vf-tc, .ap-vf-ar { font-size: .56rem; letter-spacing: .12em; } }
+
+/* the title arrives letter by letter; the counter rolls */
+.ap-title .wd { display: inline-block; white-space: nowrap; }
+.ap-title .ch { display: inline-block; opacity: 0; transform: translateY(.42em) rotate(5deg); filter: blur(5px);
+  transition: opacity .55s var(--ease), transform .9s cubic-bezier(.2, .8, .2, 1), filter .6s var(--ease);
+  transition-delay: calc(var(--i, 0) * 24ms); }
+.ap-caption.is-in .ap-title .ch { opacity: 1; transform: none; filter: none; }
+.ap-num { display: inline-block; overflow: hidden; vertical-align: bottom; }
+.ap-num > span { display: inline-block; }
+.ap-caption.is-in .ap-num > span { animation: ap-roll .8s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes ap-roll { from { transform: translateY(110%); } to { transform: none; } }
+
+/* what I make: a film comes up under the pointer */
+.ap-peek { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; width: 300px; aspect-ratio: 16 / 9;
+  margin: -84px 0 0 28px; opacity: 0; transition: opacity .35s var(--ease); }
+.ap-peek.is-v { width: 168px; aspect-ratio: 9 / 16; margin-top: -150px; }
+.ap-peek img { display: block; width: 100%; height: 100%; object-fit: cover; box-shadow: 0 30px 80px rgba(0, 0, 0, .55);
+  transform: scale(1.14); clip-path: inset(50% 0 50% 0); transition: transform 1.3s var(--ease), clip-path .7s cubic-bezier(.2, .8, .2, 1); }
+.ap-peek.is-on { opacity: 1; }
+.ap-peek.is-on img { transform: scale(1); clip-path: inset(0 0 0 0); }
+[dir="rtl"] .ap-peek { margin-left: -328px; }
+[dir="rtl"] .ap-peek.is-v { margin-left: -196px; }
+
+/* between pages the lens closes and opens again, like the home page's iris */
+@property --iris { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --iris-rot { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.curtain, .curtain.is-up, .curtain.is-down { transform: none !important; }
+.curtain {
+  --iris: 0px; --iris-rot: 0deg;
+  background: repeating-conic-gradient(from var(--iris-rot), #0d0d0f 0deg 38.4deg, #1a1a1d 38.4deg 40deg);
+  -webkit-mask: radial-gradient(circle at 50% 50%, transparent var(--iris), #000 calc(var(--iris) + 1.5px));
+  mask: radial-gradient(circle at 50% 50%, transparent var(--iris), #000 calc(var(--iris) + 1.5px));
+  transition: --iris 1s cubic-bezier(.76, 0, .24, 1), --iris-rot 1s cubic-bezier(.76, 0, .24, 1);
+}
+.curtain.is-up { --iris: 150vmax; --iris-rot: 70deg; visibility: hidden;
+  transition: --iris 1s cubic-bezier(.76, 0, .24, 1), --iris-rot 1s cubic-bezier(.76, 0, .24, 1), visibility 0s linear 1s; }
+.curtain.is-down { --iris: 0px; --iris-rot: 0deg; visibility: visible;
+  transition: --iris .48s cubic-bezier(.76, 0, .24, 1), --iris-rot .48s cubic-bezier(.76, 0, .24, 1), visibility 0s; }
