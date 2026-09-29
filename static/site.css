@@ -1085,6 +1085,68 @@ a.vframe .play { position: absolute; inset: 0; margin: auto; }
 .ap-all { margin: clamp(28px, 4vw, 48px) 0 0; }
 .ap-entity { padding-top: 0; }
 .ap-entity .entity { color: var(--bone-3); font-size: .95rem; }
-/* the iris is the home page's entrance; the page curtain would be a second one */
-.page-home .curtain { display: none; }
+/* the iris is the home page's entrance; the page iris only closes on the way out */
+.page-home .curtain:not(.is-down) { visibility: hidden; }
 .ap-endline { text-shadow: 0 2px 30px rgba(0, 0, 0, .6); }
+
+/* =========================================================
+   APERTURE v2 — the room is alive
+   ========================================================= */
+
+/* the "Scroll" hint waits 2 s to appear, but leaves at once */
+.ap-ready.ap-moved .ap-scroll { transition: opacity .35s var(--ease); }
+
+/* the viewfinder: frame lines that lock onto the film in focus, with its timecode */
+.ap-vf { position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none;
+  width: var(--vf-w, 0); height: var(--vf-h, 0); transform: translate3d(var(--vf-x, 0), var(--vf-y, 0), 0); opacity: var(--vf-o, 0); }
+.ap-vf-c { position: absolute; width: 22px; height: 22px; border: 0 solid rgba(244, 239, 231, .78); }
+.ap-vf-c.tl { left: -12px; top: -12px; border-top-width: 1px; border-left-width: 1px; }
+.ap-vf-c.tr { right: -12px; top: -12px; border-top-width: 1px; border-right-width: 1px; }
+.ap-vf-c.bl { left: -12px; bottom: -12px; border-bottom-width: 1px; border-left-width: 1px; }
+.ap-vf-c.br { right: -12px; bottom: -12px; border-bottom-width: 1px; border-right-width: 1px; }
+.ap-vf-tc, .ap-vf-ar { position: absolute; right: -12px; font: 500 .62rem/1 var(--sans); letter-spacing: .16em;
+  color: rgba(244, 239, 231, .74); font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 10px rgba(0, 0, 0, .6); }
+.ap-vf-tc { bottom: -30px; }
+.ap-vf-tc::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #e0493c; margin-right: 9px; vertical-align: 1px; animation: ap-blink 1.6s steps(1) infinite; }
+.ap-vf-ar { top: -28px; }
+[dir="rtl"] .ap-vf-tc, [dir="rtl"] .ap-vf-ar { right: auto; left: -12px; }
+@keyframes ap-blink { 50% { opacity: .2; } }
+@media (max-width: 759px) { .ap-vf-c { width: 16px; height: 16px; } .ap-vf-tc, .ap-vf-ar { font-size: .56rem; letter-spacing: .12em; } }
+
+/* the title arrives letter by letter; the counter rolls */
+.ap-title .wd { display: inline-block; white-space: nowrap; }
+.ap-title .ch { display: inline-block; opacity: 0; transform: translateY(.42em) rotate(5deg); filter: blur(5px);
+  transition: opacity .55s var(--ease), transform .9s cubic-bezier(.2, .8, .2, 1), filter .6s var(--ease);
+  transition-delay: calc(var(--i, 0) * 24ms); }
+.ap-caption.is-in .ap-title .ch { opacity: 1; transform: none; filter: none; }
+.ap-num { display: inline-block; overflow: hidden; vertical-align: bottom; }
+.ap-num > span { display: inline-block; }
+.ap-caption.is-in .ap-num > span { animation: ap-roll .8s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes ap-roll { from { transform: translateY(110%); } to { transform: none; } }
+
+/* what I make: a film comes up under the pointer */
+.ap-peek { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; width: 300px; aspect-ratio: 16 / 9;
+  margin: -84px 0 0 28px; opacity: 0; transition: opacity .35s var(--ease); }
+.ap-peek.is-v { width: 168px; aspect-ratio: 9 / 16; margin-top: -150px; }
+.ap-peek img { display: block; width: 100%; height: 100%; object-fit: cover; box-shadow: 0 30px 80px rgba(0, 0, 0, .55);
+  transform: scale(1.14); clip-path: inset(50% 0 50% 0); transition: transform 1.3s var(--ease), clip-path .7s cubic-bezier(.2, .8, .2, 1); }
+.ap-peek.is-on { opacity: 1; }
+.ap-peek.is-on img { transform: scale(1); clip-path: inset(0 0 0 0); }
+[dir="rtl"] .ap-peek { margin-left: -328px; }
+[dir="rtl"] .ap-peek.is-v { margin-left: -196px; }
+
+/* between pages the lens closes and opens again, like the home page's iris */
+@property --iris { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --iris-rot { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.curtain, .curtain.is-up, .curtain.is-down { transform: none !important; }
+.curtain {
+  --iris: 0px; --iris-rot: 0deg;
+  background: repeating-conic-gradient(from var(--iris-rot), #0d0d0f 0deg 38.4deg, #1a1a1d 38.4deg 40deg);
+  -webkit-mask: radial-gradient(circle at 50% 50%, transparent var(--iris), #000 calc(var(--iris) + 1.5px));
+  mask: radial-gradient(circle at 50% 50%, transparent var(--iris), #000 calc(var(--iris) + 1.5px));
+  transition: --iris 1s cubic-bezier(.76, 0, .24, 1), --iris-rot 1s cubic-bezier(.76, 0, .24, 1);
+}
+.curtain.is-up { --iris: 150vmax; --iris-rot: 70deg; visibility: hidden;
+  transition: --iris 1s cubic-bezier(.76, 0, .24, 1), --iris-rot 1s cubic-bezier(.76, 0, .24, 1), visibility 0s linear 1s; }
+.curtain.is-down { --iris: 0px; --iris-rot: 0deg; visibility: visible;
+  transition: --iris .48s cubic-bezier(.76, 0, .24, 1), --iris-rot .48s cubic-bezier(.76, 0, .24, 1), visibility 0s; }

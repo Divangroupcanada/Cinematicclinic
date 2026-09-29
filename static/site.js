@@ -46,7 +46,8 @@
      --------------------------------------------------------------- */
   var scroller = d.getElementById('scroll');
   // Pages that drive their own scroll-linked scene (the home reel) keep native scroll.
-  var smooth = !!scroller && !reduce && fine && wide() && !d.body.hasAttribute('data-native-scroll');
+  var nativeScroll = d.body.hasAttribute('data-native-scroll');
+  var smooth = !!scroller && !reduce && fine && wide() && !nativeScroll;
   var current = 0, target = 0, running = false;
 
   function sizeBody() {
@@ -62,7 +63,8 @@
     if (running) requestAnimationFrame(frame);
   }
   function startSmooth() {
-    if (!scroller || running) return;
+    // the home reel pins its stage with position:sticky — a transformed wrapper would unpin it
+    if (!scroller || running || nativeScroll) return;
     running = true;
     root.classList.add('has-smooth');
     scroller.style.position = 'fixed';
@@ -82,7 +84,7 @@
   }
   if (smooth) startSmooth();
   w.addEventListener('resize', function () {
-    if (!scroller || reduce || !fine) return;
+    if (!scroller || reduce || !fine || nativeScroll) return;
     if (wide() && !running) startSmooth();
     else if (!wide() && running) stopSmooth();
     else sizeBody();
