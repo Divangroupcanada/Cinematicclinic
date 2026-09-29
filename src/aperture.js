@@ -299,6 +299,7 @@ function boot(root) {
     m.material.uniforms.uCrop.value.set(crop, 1 - 2 * crop);
     const L = layout[m.userData.i];
     L.hTarget = L.h0 * (1 - 2 * crop);
+    readRatio(m.userData.i);   // the matte can arrive after the caption
   }
   // the average colour of a still, pushed down into shadow: the room's light
   const probe = document.createElement('canvas'); probe.width = probe.height = 8;
@@ -439,6 +440,23 @@ function boot(root) {
     return text.split(' ').map((w) => `<span class="wd">${[...w].map((c) => `<span class="ch" style="--i:${k++}">${esc(c)}</span>`).join('')}</span>`).join(' ');
   }
   let shown = -1;
+  // The viewfinder reads the picture as it is shown: a scope film cropped out of its
+  // letterbox says 2.39:1, not the 16:9 container it was delivered in.
+  const RATIOS = [1.85, 2, 2.2, 2.35, 2.39];
+  function readRatio(i) {
+    if (!ui.ar || i !== shown) return;
+    const L = layout[i];
+    let label = '16:9';
+    if (films[i].orient === 'v') label = '9:16';
+    else {
+      const a = L.w / L.hTarget;
+      if (a > 1.82) {
+        const near = RATIOS.reduce((b, r) => (Math.abs(r - a) < Math.abs(b - a) ? r : b));
+        label = `${(Math.abs(near - a) < 0.08 ? near : a).toFixed(2)}:1`;
+      }
+    }
+    ui.ar.textContent = label;
+  }
   function showCaption(i) {
     if (i === shown) return;
     shown = i;
@@ -452,7 +470,7 @@ function boot(root) {
       ui.meta.textContent = `${f.client} · ${f.cat}`;
       ui.watch.setAttribute('data-ap-play', i);
       ui.watch.setAttribute('aria-label', `${cfg.ui.watch} — ${f.title}, ${f.client}`);
-      if (ui.ar) ui.ar.textContent = f.orient === 'v' ? '9:16' : '16:9';
+      readRatio(i);
       ui.caption.classList.add('is-in');
     }, 180);
     ui.rail.forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
