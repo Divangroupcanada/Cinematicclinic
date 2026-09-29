@@ -90,6 +90,12 @@ films hanging in the dark; the one in focus plays and lights the room in its own
 Click it (or "Watch with sound") for the whole film with sound; arrows move one film at a time;
 the rail on the side jumps to any film. The iris closes at the end.
 
+The room is alive (v2): the camera breathes and leans toward the mouse, dust hangs in the
+projector light, each film stands on a dark mirror, frames soften while travelling and land
+with a light leak, scope films are matted to their real width (detected from the black bars),
+and a viewfinder with the film's own timecode locks onto the film in focus. Between pages the
+lens closes and opens (the `.curtain`, drawn as an iris in CSS).
+
 The page stands without the scene: reduced motion, Save-Data, 2G, no WebGL, or a module that
 has not started in four seconds all get the same films as a still grid, each one playable.
 

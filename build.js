@@ -455,7 +455,10 @@ R.home = (lang) => {
   const films = reel.films.map((f) => ({ slug: f.slug, orient: f.orient, title: pick2(f.title), client: pick2(f.client), cat: pick2(f.cat), video: f.video, poster: f.poster }));
   const abs2 = (p) => (/^(https?:)?\//.test(p) ? p : reel.base + p);
   const num = (n) => (lang === 'fa' ? FA_DIGITS(String(n).padStart(2, '0')) : String(n).padStart(2, '0'));
-  const cfg = { base: reel.base, lang, ui: { watch: ap.watch, close: ap.close }, films };
+  // hovering a service brings up a still from a film of that kind
+  const PEEK = { 'clinic-film': 'roda-bath', 'doctor-series': 'baharak-wsh', 'film-week': 'clinic-vibe' };
+  const peek = (page) => { const f = reel.films.find((x) => x.slug === PEEK[page]); return f ? ` data-peek="${abs2(f.poster)}" data-peek-o="${f.orient}"` : ''; };
+  const cfg = { base: reel.base, lang, ui: { watch: ap.watch, close: ap.close, cursor: ap.cursor }, films };
   // The scene decides for itself whether it can run. Until it has, the page
   // assumes it will (no flash of the fallback grid) — unless reduced motion is
   // on, or the module has not started within four seconds.
@@ -472,6 +475,7 @@ R.home = (lang) => {
   <div class="ap-track" style="--ap-n:${films.length}">
     <div class="ap-stage">
       <canvas class="ap-canvas" aria-hidden="true"></canvas>
+      <div class="ap-vf" aria-hidden="true"><i class="ap-vf-c tl"></i><i class="ap-vf-c tr"></i><i class="ap-vf-c bl"></i><i class="ap-vf-c br"></i><span class="ap-vf-tc" dir="ltr">00:00:00:00</span><span class="ap-vf-ar" dir="ltr"></span></div>
       <span class="ap-scroll" aria-hidden="true">${esc(ap.scroll)}</span>
       <div class="ap-caption" aria-live="polite">
         <span class="ap-count"></span>
@@ -493,7 +497,7 @@ R.home = (lang) => {
 <section class="ap-after">
   <div class="wrap">
     <span class="label">${esc(ap.services)}</span>
-    <ol class="ap-services">${h.offers.map((o, i) => `<li><a href="${url(lang, o.page)}"><span class="ap-s-n" dir="ltr">${num(i + 1)}</span><span class="ap-s-t">${esc(o.t)}</span><span class="ap-s-d">${esc(o.d)}</span></a></li>`).join('')}</ol>
+    <ol class="ap-services">${h.offers.map((o, i) => `<li><a href="${url(lang, o.page)}"${peek(o.page)}><span class="ap-s-n" dir="ltr">${num(i + 1)}</span><span class="ap-s-t">${esc(o.t)}</span><span class="ap-s-d">${esc(o.d)}</span></a></li>`).join('')}</ol>
     <p class="ap-all"><a class="link arrow" href="${url(lang, 'work')}">${esc(h.filmsAll)}</a></p>
   </div>
 </section>
