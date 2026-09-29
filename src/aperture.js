@@ -341,7 +341,7 @@ function boot(root) {
     const u = m.userData;
     if (level > 0 && !u.video) {
       const v = document.createElement('video');
-      v.crossOrigin = 'anonymous'; v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
+      v.crossOrigin = 'anonymous'; v.muted = true; v.defaultMuted = true; v.playsInline = true;
       v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
       v.preload = level > 1 ? 'auto' : 'metadata';
       v.src = src(films[u.i].video);
@@ -351,6 +351,7 @@ function boot(root) {
         if (swapped || u.video !== v || v.readyState < 2 || v.currentTime < 0.05) return;
         swapped = true;
         const t = new VideoTexture(v); t.colorSpace = NoColorSpace; t.minFilter = LinearFilter; t.generateMipmaps = false;
+        t.needsUpdate = true;                                    // upload this frame now, not on the next video frame: no black blink
         u.vtex = t;
         u.cropVideo = films[u.i].orient === 'v' ? 0 : letterbox(v);
         bind(m, t, u.cropVideo);
@@ -363,7 +364,10 @@ function boot(root) {
         const c = letterbox(v);
         if (c && Math.abs(c - u.cropVideo) > 0.01) { u.cropVideo = c; if (u.vtex) bind(m, u.vtex, c); }
       };
-      v.addEventListener('loadedmetadata', () => { try { v.currentTime = Math.min(2.5, (v.duration || 0) * 0.1); } catch (e) {} }, { once: true });
+      // films open on titles or black: the loop starts a little in and never goes back to frame one
+      const startAt = () => Math.min(2.5, (v.duration || 0) * 0.1);
+      v.addEventListener('loadedmetadata', () => { try { v.currentTime = startAt(); } catch (e) {} }, { once: true });
+      v.addEventListener('ended', () => { try { v.currentTime = startAt(); } catch (e) {} if (u.video === v && !v.paused) return; v.play().catch(() => {}); });
       v.addEventListener('seeked', swap);
       v.addEventListener('timeupdate', () => { swap(); if (swapped && v.currentTime > 4 + checks * 3) recheck(); });
       u.video = v;
